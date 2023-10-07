@@ -1,0 +1,7 @@
+*.o
+*.s
+*.a
+*.dblite
+*.bin
+*.app
+*.map
