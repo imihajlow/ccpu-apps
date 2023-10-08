@@ -13,7 +13,7 @@
 
 #include "snake_maps.h"
 
-#define MAX_SNAKE 100
+#define MAX_SNAKE 255
 
 static_assert(MAX_SNAKE <= UINT8_MAX, "snake index must fit in a byte");
 
@@ -154,10 +154,12 @@ static void run_snake(const uint8_t *map) {
 }
 
 void main(void) {
-    const uint8_t *maps[3];
+    const uint8_t *maps[5];
     maps[0] = map_corners;
     maps[1] = map_box;
     maps[2] = map_obstacles;
+    maps[3] = map_maze;
+    maps[4] = map_snake;
     uint16_t map_index = 0;
     while(true) {
         run_snake(maps[map_index]);
