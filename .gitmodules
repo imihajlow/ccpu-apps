@@ -1,0 +1,3 @@
+[submodule "iptest/uip"]
+	path = iptest/uip
+	url = https://github.com/imihajlow/ccpu-uip.git
