@@ -57,7 +57,8 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_BUFFER_SIZE     420
+#define UIP_CONF_BUFFER_SIZE     900
+#define UIP_CONF_EXTERNAL_BUFFER
 
 /**
  * CPU byte order.
@@ -71,14 +72,18 @@ typedef unsigned short uip_stats_t;
  *
  * \hideinitializer
  */
-#define UIP_CONF_LOGGING         0
+#define UIP_CONF_LOGGING         1
 
 /**
  * UDP support on or off
  *
  * \hideinitializer
  */
-#define UIP_CONF_UDP             0
+#define UIP_CONF_UDP             1
+
+#define UIP_CONF_TCP             0
+
+#define UIP_CONF_ACTIVE_OPEN     1
 
 /**
  * UDP checksums on or off
@@ -103,11 +108,13 @@ typedef unsigned short uip_stats_t;
 #define UIP_ETHADDR4 0xEE
 #define UIP_ETHADDR5 0xEA
 
-#define UIP_CONF_EXTERNAL_BUFFER
-#define UIP_CONF_BUFFER_SIZE 900
-
 #define UIP_APPCALL     iptest_appcall
+// #define UIP_UDP_APPCALL     iptest_appcall_udp
 
 typedef int uip_tcp_appstate_t;
+// typedef int uip_udp_appstate_t;
 
 void iptest_appcall(void);
+void iptest_appcall_udp(void);
+
+#include "dhcpc.h"

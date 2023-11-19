@@ -60,7 +60,8 @@ app_startup = ['$CC_DIR/ccpu-runtime/app_startup.asm']
 libc = ['../../ccpu-libc/libc.a']
 libsys = ['../../ccpu-libsys/libsys.a']
 quasipixel = Split('../lib/quasipixel.c ../lib/qp_render.asm')
-uip = Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip_buf.asm chksum.asm')
+uip = Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip/uip/timer.c uip_buf.asm chksum.asm')
+dhcpc = Split('uip/apps/dhcpc/dhcpc.c')
 
 # Apps
-env.App('iptest', Split('main.c') + c_runtime + app_startup + libc + libsys + uip)
+env.App('iptest', Split('main.c') + c_runtime + app_startup + libc + libsys + uip + dhcpc)
