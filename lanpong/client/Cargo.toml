@@ -1,0 +1,15 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+minifb = "0.25"
+raqote = "0.8"
+num = "0.4"
+num-traits = "0.2"
+num-derive = "0.4"
+font-kit = "0.11"
+geometric = "0.2"
