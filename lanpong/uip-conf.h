@@ -111,7 +111,7 @@ typedef unsigned short uip_stats_t;
 #define UIP_UDP_APPCALL     iptest_appcall_udp
 
 typedef int uip_tcp_appstate_t;
-// typedef int uip_udp_appstate_t;
+typedef int uip_udp_appstate_t;
 
 void iptest_appcall(void);
 void iptest_appcall_udp(void);
