@@ -184,6 +184,7 @@ void dhcpc_configured(const struct dhcpc_state *s) {
     memcpy(VGA_CHAR_SEG + VGA_OFFSET(0, 0), buf, 16);
 
     ip_configured = true;
+    srand(clock_time());
     game_init();
 }
 

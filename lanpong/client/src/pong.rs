@@ -43,7 +43,7 @@ struct BallState {
     t: SystemTime,
 }
 
-const TOP: u16 = 1 * 512;
+const TOP: u16 = 0 * 512;
 const BOTTOM: u16 = 30 * 512;
 const LEFT: u16 = 1 * 256;
 const RIGHT: u16 = 79 * 256;
@@ -164,6 +164,12 @@ impl Pong {
     pub fn set_ball(&mut self, x: i16, y: i16, sx: i16, sy: i16, now: SystemTime) {
         self.ball_x = x as f32;
         self.ball_y = y as f32;
+        let last_origin = self.ball_origin.take();
+        self.ball_origin = Some(BallState {
+            x: self.ball_x,
+            y: self.ball_y,
+            t: now,
+        });
 
         let got_speed = Vector2::new([sx as f32, sy as f32]);
 
@@ -179,8 +185,9 @@ impl Pong {
             }
         }
 
-        if let Some(last_origin) = self.ball_origin.take() {
+        if let Some(last_origin) = last_origin {
             let dt = now.duration_since(last_origin.t).unwrap().as_millis() as f32;
+            println!("dt = {}", dt);
             if dt < 2000.0 {
                 let dx_straight =
                     Vector2::new([self.ball_x - last_origin.x, self.ball_y - last_origin.y]);
@@ -192,7 +199,7 @@ impl Pong {
                 ]);
                 let dx_bounce_bot = Vector2::new([
                     self.ball_x - last_origin.x,
-                    self.ball_y - 2.0 * bottom * last_origin.y,
+                    self.ball_y - 2.0 * bottom + last_origin.y,
                 ]);
                 let candidate_speeds = [dx_straight / dt, dx_bounce_top / dt, dx_bounce_bot / dt];
                 let got_speed_norm = got_speed.norm();
@@ -212,7 +219,11 @@ impl Pong {
                 let best_speed = candidate_speeds[best_speed_i];
                 let speed_factor_x = best_speed.x() / got_speed.x();
                 let speed_factor_y = best_speed.y() / got_speed.y();
-                let speed_factor = (speed_factor_x + speed_factor_y) / 2.0;
+                let speed_factor = if speed_factor_y.is_nan() {
+                    speed_factor_x
+                } else {
+                    (speed_factor_x + speed_factor_y) / 2.0
+                };
                 println!("best_speed = {:?}, speed_factor = {}", best_speed, speed_factor);
                 self.speed_factor = Some(speed_factor);
                 self.ball_speed = Some(best_speed);
@@ -220,11 +231,6 @@ impl Pong {
                 self.ball_speed = None;
             }
         }
-        self.ball_origin = Some(BallState {
-            x: self.ball_x,
-            y: self.ball_y,
-            t: now,
-        });
     }
 
     pub fn set_left_board(&mut self, row: u8) {

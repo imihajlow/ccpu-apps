@@ -7,11 +7,11 @@
 #define BOARD_CYCLES 10
 #define BOARD_ACCELERATION 1
 
-#define CHAR_TOP 223
-#define CHAR_BOT 220
+#define CHAR_TOP 129
+#define CHAR_BOT 130
 #define CHAR_BOARD 219
 
-#define TOP (1 * 512)
+#define TOP (0 * 512)
 #define BOTTOM (VGA_ROWS * 512)
 #define LEFT (1 * 256)
 #define RIGHT ((VGA_COLS - 1) * 256)
@@ -57,7 +57,7 @@ void pong_init(void) {
     } else {
         pong_ball_speed_x = -1;
     }
-    pong_ball_speed_y = rand() % 10 - 5;
+    pong_ball_speed_y = rand() % 6 - 3;
     pong_ball_x = VGA_COLS << 7;
     pong_ball_y = VGA_ROWS << 8;
     board_left_speed = 0;

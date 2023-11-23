@@ -64,4 +64,4 @@ uip = Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip/uip/timer.c ui
 dhcpc = Split('uip/apps/dhcpc/dhcpc.c')
 
 # Apps
-env.App('lanpong', Split('main.c pong.c game.c') + c_runtime + app_startup + libc + libsys + uip + dhcpc)
+env.App('lanpong', Split('main.c pong.c game.c bigdigit.c') + c_runtime + app_startup + libc + libsys + uip + dhcpc)

@@ -8,9 +8,14 @@
 #include <libsys/crc.h>
 #include <libsys/ps2keyboard.h>
 #include "uip.h"
+#include "timer.h"
 #include "pong.h"
+#include "bigdigit.h"
 
 #define UDP_PORT 7657
+#define CONN_TIMEOUT (32 * 5) // 5 seconds
+
+#define CHAR_TOP 223
 
 static enum game_state_t {
     STATE_LOBBY = 0,
@@ -18,10 +23,12 @@ static enum game_state_t {
     STATE_GAME,
 } game_state;
 
-uint16_t score_left = 0;
-uint16_t score_right = 0;
-bool left_ready = false;
-bool right_ready = false;
+static uint16_t score_left = 0;
+static uint16_t score_right = 0;
+static bool left_ready = false;
+static bool right_ready = false;
+
+static struct uip_udp_conn *conn;
 
 #define LEN_ANNOUNCE  (5)
 #define LEN_JOIN  (5)
@@ -31,15 +38,16 @@ bool right_ready = false;
 #define LEN_BALLBOARD  (5 + sizeof(struct ball_board_t))
 #define LEN_SCORE  (5 + sizeof(struct score_t))
 
+#define LOBBY_SPINNER_OFFSET VGA_OFFSET(VGA_COLS / 2 - 1, VGA_ROWS / 2)
+
 void game_init(void) {
     vga_clear(COLOR(COLOR_WHITE, COLOR_BLACK));
-    strcpy(VGA_CHAR_SEG, "LOBBY");
     game_state = STATE_LOBBY;
 
     uip_ipaddr_t addr;
     addr[0] = 0xffff;
     addr[1] = 0xffff;
-    uip_udp_new(&addr, HTONS(UDP_PORT));
+    conn = uip_udp_new(&addr, HTONS(UDP_PORT));
 }
 
 static void lobby_process(void);
@@ -68,6 +76,9 @@ void game_appcall(void) {
 
 static void show_score(bool set_left_ready, bool set_right_ready);
 static void start_round(void);
+static void enter_lobby(void);
+
+static struct timer conn_timeout_timer;
 
 static void pong_appcall(void) {
     if (uip_udp_conn->rport == HTONS(UDP_PORT)) {
@@ -82,6 +93,7 @@ static void pong_appcall(void) {
             msg->ball_board.board_col = board_left_row;
             uip_udp_send(LEN_BALLBOARD);
         } else if (uip_newdata()) {
+            timer_set(&conn_timeout_timer, CONN_TIMEOUT);
             if (uip_datalen() >= 5) {
                 struct net_message_t *msg = (struct net_message_t *)uip_appdata;
                 if (msg->cookie == MAGIC_COOKIE) {
@@ -131,6 +143,7 @@ static void score_appcall(void) {
                 uip_udp_send(LEN_READY);
             }
         } else if (uip_newdata()) {
+            timer_set(&conn_timeout_timer, CONN_TIMEOUT);
             if (uip_datalen() >= 5) {
                 struct net_message_t *msg = (struct net_message_t *)uip_appdata;
                 if (msg->cookie == MAGIC_COOKIE) {
@@ -155,6 +168,7 @@ static void lobby_appcall(void) {
             msg->tag = ANNOUNCE;
             uip_udp_send(LEN_ANNOUNCE);
         } else if (uip_newdata()) {
+            timer_set(&conn_timeout_timer, CONN_TIMEOUT);
             if (uip_datalen() >= 5) {
                 struct net_message_t *msg = (struct net_message_t *)uip_appdata;
                 if (msg->cookie == MAGIC_COOKIE) {
@@ -214,10 +228,27 @@ static void pong_process(void) {
         show_score(false, false);
         break;
     }
+    if (timer_expired(&conn_timeout_timer)) {
+        enter_lobby();
+    }
 }
 
 static void lobby_process(void) {
+    static uint16_t count = 0;
     ps2_get_key_event();
+
+    VGA_CHAR_SEG[LOBBY_SPINNER_OFFSET + 0] = CHAR_TOP;
+    VGA_CHAR_SEG[LOBBY_SPINNER_OFFSET + 1] = CHAR_TOP;
+
+    uint16_t color;
+    switch ((count >> 10) & 0x3) {
+    case 0: color = (COLOR_LIGHT_RED << 12) | (COLOR_YELLOW << 8) | (COLOR_GREEN << 0) | (COLOR_LIGHT_CYAN << 4); break;
+    case 1: color = (COLOR_LIGHT_RED << 8) | (COLOR_YELLOW << 0) | (COLOR_GREEN << 4) | (COLOR_LIGHT_CYAN << 12); break;
+    case 2: color = (COLOR_LIGHT_RED << 0) | (COLOR_YELLOW << 4) | (COLOR_GREEN << 12) | (COLOR_LIGHT_CYAN << 8); break;
+    case 3: color = (COLOR_LIGHT_RED << 4) | (COLOR_YELLOW << 12) | (COLOR_GREEN << 8) | (COLOR_LIGHT_CYAN << 0); break;
+    }
+    *(uint16_t*)(VGA_COLOR_SEG + LOBBY_SPINNER_OFFSET) = color;
+    count += 3;
 }
 
 static void score_process(void) {
@@ -225,9 +256,13 @@ static void score_process(void) {
     if (key == PS2_KEY_ENTER) {
         show_score(true, false);
     }
+    if (timer_expired(&conn_timeout_timer)) {
+        enter_lobby();
+    }
 }
 
 #define READY_ROW 20
+#define SCORE_ROW 7
 #define READY_LENGTH 6
 static void show_score(bool set_left_ready, bool set_right_ready) {
     if (game_state != STATE_SCORE) {
@@ -237,12 +272,8 @@ static void show_score(bool set_left_ready, bool set_right_ready) {
         strcpy(VGA_CHAR_SEG + VGA_OFFSET(VGA_COLS / 4 - READY_LENGTH / 2, READY_ROW), "Ready?");
         strcpy(VGA_CHAR_SEG + VGA_OFFSET(3 * VGA_COLS / 4 - READY_LENGTH / 2, READY_ROW), "Ready?");
 
-        char buf[6];
-        __uitoa(score_left, buf, 10);
-        strcpy(VGA_CHAR_SEG + VGA_OFFSET(VGA_COLS / 4, 10), buf);
-
-        __uitoa(score_right, buf, 10);
-        strcpy(VGA_CHAR_SEG + VGA_OFFSET(3 * VGA_COLS / 4, 10), buf);
+        bd_draw_number_centered(VGA_COLS / 4 + 1, SCORE_ROW, score_left);
+        bd_draw_number_centered(3 * VGA_COLS / 4 + 1, SCORE_ROW, score_right);
     }
     left_ready |= set_left_ready;
     right_ready |= set_right_ready;
@@ -265,4 +296,15 @@ static void start_round(void) {
     vga_clear(COLOR(COLOR_WHITE, COLOR_BLACK));
     pong_init();
     game_state = STATE_GAME;
+}
+
+static void enter_lobby(void) {
+    vga_clear(COLOR(COLOR_WHITE, COLOR_BLACK));
+    conn->ripaddr[0] = 0xffff;
+    conn->ripaddr[1] = 0xffff;
+    score_left = 0;
+    score_right = 0;
+    left_ready = false;
+    right_ready = false;
+    game_state = STATE_LOBBY;
 }
