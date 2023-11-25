@@ -219,12 +219,20 @@ impl Pong {
                 let best_speed = candidate_speeds[best_speed_i];
                 let speed_factor_x = best_speed.x() / got_speed.x();
                 let speed_factor_y = best_speed.y() / got_speed.y();
-                let speed_factor = if speed_factor_y.is_nan() {
+                let speed_factor = if sy == 0 {
                     speed_factor_x
                 } else {
                     (speed_factor_x + speed_factor_y) / 2.0
                 };
                 println!("best_speed = {:?}, speed_factor = {}", best_speed, speed_factor);
+                if let Some(last_speed_factor) = self.speed_factor {
+                    if speed_factor / last_speed_factor > 3.0 {
+                        println!("change of speed is too sudden, discarding");
+                        self.ball_speed = None;
+                        self.speed_factor = None;
+                        return;
+                    }
+                }
                 self.speed_factor = Some(speed_factor);
                 self.ball_speed = Some(best_speed);
             } else {

@@ -1,4 +1,5 @@
 use font_kit::family_name::FamilyName;
+use font_kit::font::Font;
 use font_kit::properties::{Properties, Weight};
 use font_kit::source::SystemSource;
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
@@ -51,6 +52,27 @@ struct BallBoard {
     board_row: u8,
 }
 
+fn draw_text_centered(
+    dt: &mut DrawTarget,
+    font: &Font,
+    point_size: f32,
+    text: &str,
+    origin: Point,
+    src: &Source,
+) {
+    let mut width = 0.0;
+    for c in text.chars() {
+        if let Some(glyph) = font.glyph_for_char(c) {
+            width += font.advance(glyph).unwrap_or_default().x();
+        }
+    }
+    let width_em = width / (font.metrics().units_per_em as f32);
+    let width_px = width_em * point_size;
+    let left_x = origin.x - width_px / 2.0;
+    let origin = Point::new(left_x, origin.y);
+    dt.draw_text(&font, point_size, text, origin, src, &DrawOptions::new());
+}
+
 fn score_process(window: &mut Window, listener: &NetListener) -> io::Result<Option<BallBoard>> {
     let mut left_ready = false;
     let mut right_ready = false;
@@ -67,8 +89,8 @@ fn score_process(window: &mut Window, listener: &NetListener) -> io::Result<Opti
     let size = window.get_size();
     let mut dt = DrawTarget::new(size.0 as i32, size.1 as i32);
     let mut last_msg_time = SystemTime::now();
-    let mut score_left = 0;
-    let mut score_right = 0;
+    let mut score_left = None;
+    let mut score_right = None;
     while window.is_open() {
         if window.is_key_pressed(Key::Enter, KeyRepeat::No) {
             right_ready = true;
@@ -105,64 +127,75 @@ fn score_process(window: &mut Window, listener: &NetListener) -> io::Result<Opti
                 }
             }
             Some(NetMessage::Score { left, right }) => {
-                score_left = left;
-                score_right = right;
+                score_left = Some(left);
+                score_right = Some(right);
             }
             _ => (),
         };
 
         dt.clear(SolidSource::from_unpremultiplied_argb(0xff, 0x0, 0x0, 0x0));
-        dt.draw_text(
+
+        let center_left = (WIDTH as f32) * 1.0 / 4.0;
+        let center_right = (WIDTH as f32) * 3.0 / 4.0;
+
+        let baseline_score = (HEIGHT as f32) * 0.5;
+        let baseline_ready = (HEIGHT as f32) * 0.7;
+
+        if let Some(score_left) = score_left {
+            draw_text_centered(
+                &mut dt,
+                &font,
+                160.,
+                &format!("{}", score_left),
+                Point::new(center_left, baseline_score),
+                &Source::Solid(SolidSource {
+                    r: 0xff,
+                    g: 0xff,
+                    b: 0xff,
+                    a: 0xff,
+                }),
+            );
+        }
+        if let Some(score_right) = score_right {
+            draw_text_centered(
+                &mut dt,
+                &font,
+                160.,
+                &format!("{}", score_right),
+                Point::new(center_right, baseline_score),
+                &Source::Solid(SolidSource {
+                    r: 0xff,
+                    g: 0xff,
+                    b: 0xff,
+                    a: 0xff,
+                }),
+            );
+        }
+        draw_text_centered(
+            &mut dt,
             &font,
-            24.,
-            &format!("{}", score_left),
-            Point::new(30., 30.),
-            &Source::Solid(SolidSource {
-                r: 0xff,
-                g: 0xff,
-                b: 0xff,
-                a: 0xff,
-            }),
-            &DrawOptions::new(),
-        );
-        dt.draw_text(
-            &font,
-            24.,
-            &format!("{}", score_right),
-            Point::new(400., 30.),
-            &Source::Solid(SolidSource {
-                r: 0xff,
-                g: 0xff,
-                b: 0xff,
-                a: 0xff,
-            }),
-            &DrawOptions::new(),
-        );
-        dt.draw_text(
-            &font,
-            24.,
+            20.,
             if left_ready { "Ready!" } else { "Ready?" },
-            Point::new(30., 300.),
+            Point::new(center_left, baseline_ready),
             &Source::Solid(SolidSource {
                 r: 0xff,
                 g: 0xff,
                 b: 0xff,
                 a: 0xff,
             }),
-            &DrawOptions::new(),
         );
-        dt.draw_text(
+        draw_text_centered(
+            &mut dt,
             &font,
-            24.,
+            20.,
             if right_ready { "Ready!" } else { "Ready?" },
-            Point::new(400., 300.),
+            Point::new(center_right, baseline_ready),
             &Source::Solid(SolidSource {
                 r: 0xff,
                 g: 0xff,
                 b: 0xff,
                 a: 0xff,
             }),
-            &DrawOptions::new(),
         );
 
         window
