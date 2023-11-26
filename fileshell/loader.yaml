@@ -1,0 +1,34 @@
+- name: init
+  begin: 0x0000
+  init: Yes
+
+- name: text
+  init: Yes
+
+- name: rodata
+  init: Yes
+
+- name: ramtext_origin
+  init: Yes
+  target: ramtext
+
+- name: data_origin
+  init: Yes
+  target: data
+
+- name: empty
+  init: No
+  begin: 0x8000
+  end: bloat
+
+- name: data
+  init: No
+  shadow: data_origin
+
+- name: ramtext
+  init: No
+  shadow: ramtext_origin
+
+- name: bss
+  init: No
+  end: 0xC000
