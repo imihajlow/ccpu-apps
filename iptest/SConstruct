@@ -6,14 +6,8 @@ cBuilder = Builder(action = 'ccpu-cc -I ../../ccpu-libc/include -I ../../ccpu-li
 def linkGenerator(source, target, env, for_signature):
     return f"link.py --layout=default-stack -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
 
-def loaderLinkGenerator(source, target, env, for_signature):
-    return f"link.py --layout=loader.yaml --api-out={target[2]} -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
-
-def extensionLinkGenerator(source, target, env, for_signature):
-    return f"link.py --slim --layout=extension.yaml --api-in={source[0]} -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source[1:])}"
-
 def appLinkGenerator(source, target, env, for_signature):
-    return f"link.py --slim --layout=app.yaml -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
+    return f"link.py --slim --layout=../app.yaml -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
 
 def linkEmitter(target, source, env):
     t = target[0]
@@ -21,16 +15,7 @@ def linkEmitter(target, source, env):
     target.append(f"{base}.map")
     return target, source
 
-def loaderLinkEmitter(target, source, env):
-    t = target[0]
-    base,ext = os.path.splitext(str(t))
-    target.append(f"{base}.map")
-    target.append(f"{base}.api")
-    return target, source
-
 linkBuilder = Builder(generator=linkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
-loaderLinkBuilder = Builder(generator=loaderLinkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=loaderLinkEmitter)
-extensionLinkBuilder = Builder(generator=extensionLinkGenerator, suffix=".ext", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
 appLinkBuilder = Builder(generator=appLinkGenerator, suffix=".app", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
 
 imageBuilder = Builder(action = './mkfat.sh data $SOURCES', suffix=".img", src_suffix=[".app", ".ext"])
@@ -39,8 +24,6 @@ env = Environment(BUILDERS = {
     'Asm' : asmBuilder,
     'C': cBuilder,
     'Bin': linkBuilder,
-    'Loader': loaderLinkBuilder,
-    'Extension': extensionLinkBuilder,
     'App': appLinkBuilder,
     'Image': imageBuilder}, ENV={'PATH': os.environ['PATH']})
 

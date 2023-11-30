@@ -1,12 +1,14 @@
 #include <string.h>
+#include <strings.h>
+#include <stdio.h>
 #include <libsys/vga.h>
 #include <libsys/ps2keyboard.h>
 #include <libsys/card.h>
-#include "fat/fat.h"
-#include "more.h"
+#include <libsys/fat/fat.h>
+#include <libsys/fat/name.h>
+#include "lib/more.h"
 // #include <line_edit.h>
 // #include <log.h>
-#include "exec.h"
 
 #define FILE_COLOR COLOR(COLOR_LIGHT_BLUE, COLOR_BLUE)
 #define CURSOR_COLOR COLOR(COLOR_BLUE, COLOR_CYAN)
@@ -22,18 +24,22 @@ struct Filename {
 
 static struct Filename filenames[MAX_FILES];
 
-static struct FatDirEntry current_dir;
+static char current_dir_name[256] __attribute__((section ("bss_hi")));
+static uint8_t buf[256] __attribute__((section ("bss_hi")));
 
-static char current_dir_name[256];
+static void message(const char *msg) {
+    memset(VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), STATUS_COLOR, VGA_COLS);
+    strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), msg);
+}
 
 static bool load_files(void) {
-    uint8_t fd = fat_open_dir(&current_dir);
+    uint8_t fd = fat_open_path(current_dir_name, 0);
     if (fd == FAT_BAD_DESC) {
-        strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "fat_open_dir failed");
+        message("fat_open_path failed");
         ps2_wait_key_pressed();
         return false;
     }
-    struct FatDirEntry ent;
+    static struct FatDirEntry ent __attribute__((section ("bss_hi")));
     struct Filename *name = (struct Filename*)filenames;
     for (uint16_t i = 0; i != MAX_FILES; i += 1) {
         name->name[0] = 0;
@@ -44,7 +50,7 @@ static bool load_files(void) {
         name->attrs = ent.attrs;
         name += 1;
     }
-    bool r = last_error == ERROR_OK;
+    bool r = fat_get_last_error() == FAT_ERROR_OK;
     fat_close(fd);
     return r;
 }
@@ -129,21 +135,26 @@ uint8_t table_cursor_loop(uint8_t max_index, bool reset_cursor) {
     }
 }
 
-void print_file(const char *name) {
+void print_file(const char *rel_name) {
+
+    strcpy(buf, current_dir_name);
+    strcat(buf, "/");
+    strcat(buf, rel_name);
+
     more_init(COLOR(COLOR_WHITE, COLOR_GREEN));
-    uint8_t f = fat_open_file(&current_dir, name, 0);
+
+    uint8_t f = fat_open_path(buf, 0);
     if (f == FAT_BAD_DESC) {
         strcpy(VGA_CHAR_SEG, "Error");
         ps2_wait_key_pressed();
         return;
     }
-    uint8_t buf[256];
     uint8_t k = 1;
     while (k) {
         uint16_t len = fat_read(f, buf, 256);
         k = more_print(buf, len);
         if (len < 256) {
-            if (last_error != FAT_EOF) {
+            if (fat_get_last_error() != FAT_EOF) {
                 strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "ERROR");
                 ps2_wait_key_pressed();
             }
@@ -157,81 +168,79 @@ void print_file(const char *name) {
     fat_close(f);
 }
 
-static void run_app(const char *name) {
-    uint8_t fd = fat_open_file(&current_dir, name, 0);
-    if (fd == FAT_BAD_DESC) {
-        // log_string("Cannot open");
-        // log_u8(last_error);
-        return;
-    }
-    if (!exec_fd(fd)) {
-        // log_string("Cannot exec");
-        // log_u8(last_error);
-        return;
+static void run_app(const char *rel_name) {
+    strcpy(buf, current_dir_name);
+    strcat(buf, "/");
+    strcat(buf, rel_name);
+
+    if (!fat_exec(buf)) {
+        strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "ERROR");
+        ps2_wait_key_pressed();
     }
 }
 
-static void run_editor(const char *target) {
-    /*u8 *slash = append_path(target);
+/*static void run_editor(const char *target) {
+    u8 *slash = append_path(target);
     u8 r = exec("/EDIT.APP", (u8*)current_dir_name, (u8*)0, (u8*)0, (u8*)0, (u8*)0, (u8*)0, (u8*)0);
     if (!r) {
         log_string("Cannot exec");
         log_u8(last_error);
     }
-    *slash = 0u8;*/
-}
+    *slash = 0u8;
+}*/
 
-static char *append_path(const char *name) {
-    char *p = current_dir_name;
-    while (*p) {
-        p += 1;
+static void append_path(const char *name) {
+    if (strcmp(name, ".") == 0) {
+        return;
     }
-    char *r = p;
-    if (current_dir_name != p && *(p - 1) != '/') {
-        *p = '/';
-        p += 1;
+    if (strcmp(name, "..") == 0) {
+        char *slash = strrchr(current_dir_name, '/');
+        if (slash) {
+            if (slash == current_dir_name) {
+                // can't go above root
+                slash[1] = 0;
+            } else {
+                *slash = 0;
+            }
+        }
+        return;
     }
-    while (*name) {
-        *p = *name;
-        p += 1;
-        name += 1;
+    int len = strlen(current_dir_name);
+    if (current_dir_name[len - 1] == '/') {
+        // ends with a slash, must be root
+        strcpy(current_dir_name + len, name);
+    } else {
+        // doesn't end with a slash
+        current_dir_name[len] = '/';
+        strcpy(current_dir_name + len + 1, name);
     }
-    *p = 0;
-    return r;
 }
 
 void main(void) {
-    fat_init();
-
     bool card_present = false;
     bool fat_success = false;
+    CARD_POWER_OFF();
 
     while (true) {
         vga_clear(FILE_COLOR);
         memset(VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), STATUS_COLOR, VGA_COLS);
         if (!card_present) {
-            strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "Waiting for card");
+            message("Waiting for card");
             while (!card_present) {
                 card_present = CARD_IS_PRESENT();
             }
             fat_success = fat_mount();
             if (fat_success) {
-                bool r = fat_change_dir(0, 0, &current_dir);
-                current_dir_name[0] = '/';
-                current_dir_name[1] = 0;
-                if (!r) {
-                    strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "fat_change_dir failed");
-                    ps2_wait_key_pressed();
-                }
+                strcpy(current_dir_name, "/");
             }
         } else if (!fat_success) {
-            strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "FAT error, remove card");
+            message("FAT error, remove card");
             while (card_present) {
                 card_present = CARD_IS_PRESENT();
             }
         } else {
             bool init = true;
-            strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "F3 - view, F4 - edit, Enter - run");
+            message("F3 - view, F4 - edit, Enter - run");
             if (load_files()) {
                 uint16_t max_index = display_table(0);
                 while (true) {
@@ -255,10 +264,8 @@ void main(void) {
                     } else if (k == PS2_KEY_ENTER) {
                         if (filenames[cursor_file_index].attrs & FAT_FILE_ATTR_DIRECTORY) {
                             char *name = filenames[cursor_file_index].name;
-                            if (fat_change_dir(&current_dir, name, &current_dir)) {
-                                append_path(name);
-                                break;
-                            }
+                            append_path(name);
+                            break;
                         } else {
                             char fat_name[11];
                             to_fat_name(fat_name, filenames[cursor_file_index].name);
@@ -279,5 +286,5 @@ void main(void) {
     }
 }
 
-int getchar(void) {}
-int putchar(int x) {}
+int getchar(void) { return EOF; }
+int putchar(int x) { return 0; }

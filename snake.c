@@ -47,7 +47,7 @@ static void pause(void) {
 }
 
 static int delay = 160;
-static void run_snake(const uint8_t *map) {
+static bool run_snake(const uint8_t *map) {
     qp_init(COLOR_GREEN, COLOR_BLACK);
 
     render_map(map);
@@ -65,7 +65,8 @@ static void run_snake(const uint8_t *map) {
 
     qp_set_and_render(apple_x, apple_y, true);
 
-    while (true) {
+    bool run = true;
+    while (run) {
         head_x += dx;
         head_y += dy;
         if (head_x == QP_WIDTH) {
@@ -87,7 +88,7 @@ static void run_snake(const uint8_t *map) {
             qp_set_and_render(apple_x, apple_y, true);
         } else if (qp_get(head_x, head_y)) {
             loose();
-            return;
+            return true;
         } else {
             qp_set_and_render(head_x, head_y, true);
             tail += 1;
@@ -106,6 +107,9 @@ static void run_snake(const uint8_t *map) {
             uint8_t key = ps2_get_key_event();
             if (key) {
                 switch (key) {
+                case PS2_KEY_ESCAPE:
+                    run = false;
+                    break;
                 case PS2_KEY_EQUALS:
                 case PS2_KEY_NUM_ADD:
                     if (delay > 1) {
@@ -151,6 +155,7 @@ static void run_snake(const uint8_t *map) {
             }
         }
     }
+    return run;
 }
 
 void main(void) {
@@ -161,8 +166,7 @@ void main(void) {
     maps[3] = map_maze;
     maps[4] = map_snake;
     uint16_t map_index = 0;
-    while(true) {
-        run_snake(maps[map_index]);
+    while (run_snake(maps[map_index])) {
         map_index += 1;
         if (map_index == sizeof(maps) / sizeof(maps[0])) {
             map_index = 0;

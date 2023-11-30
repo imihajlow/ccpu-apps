@@ -14,14 +14,10 @@
 - name: bss
   init: No
 
-- name: sys_bss
+- name: bss_hi
+  init: No
   min-begin: 0x8000
-  init: No
 
-- name: syscall_args
-  begin: 0xB800
-  init: No
-
-- name: syscall_text
-  begin: 0xB822
+- name: sys_bss
+  begin: 0xB000
   init: No

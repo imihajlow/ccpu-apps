@@ -16,18 +16,14 @@
   init: Yes
   target: data
 
-- name: empty
+- name: ramtext
+  begin: 0xB000
   init: No
-  begin: 0x8000
-  end: bloat
+  shadow: ramtext_origin
 
 - name: data
   init: No
   shadow: data_origin
-
-- name: ramtext
-  init: No
-  shadow: ramtext_origin
 
 - name: bss
   init: No

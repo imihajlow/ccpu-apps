@@ -9,9 +9,6 @@ def linkGenerator(source, target, env, for_signature):
 def loaderLinkGenerator(source, target, env, for_signature):
     return f"link.py --layout=loader.yaml --api-out={target[2]} -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
 
-def extensionLinkGenerator(source, target, env, for_signature):
-    return f"link.py --slim --layout=extension.yaml --api-in={source[0]} -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source[1:])}"
-
 def appLinkGenerator(source, target, env, for_signature):
     return f"link.py --slim --layout=app.yaml -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
 
@@ -30,7 +27,6 @@ def loaderLinkEmitter(target, source, env):
 
 linkBuilder = Builder(generator=linkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
 loaderLinkBuilder = Builder(generator=loaderLinkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=loaderLinkEmitter)
-extensionLinkBuilder = Builder(generator=extensionLinkGenerator, suffix=".ext", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
 appLinkBuilder = Builder(generator=appLinkGenerator, suffix=".app", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
 
 imageBuilder = Builder(action = './mkfat.sh data $SOURCES', suffix=".img", src_suffix=[".app", ".ext"])
@@ -40,7 +36,6 @@ env = Environment(BUILDERS = {
     'C': cBuilder,
     'Bin': linkBuilder,
     'Loader': loaderLinkBuilder,
-    'Extension': extensionLinkBuilder,
     'App': appLinkBuilder,
     'Image': imageBuilder}, ENV={'PATH': os.environ['PATH']})
 
@@ -70,17 +65,12 @@ snake = Split('snake.c snake_maps.c')
 env.Bin('snake_rom', snake + c_runtime + rom_startup + libc + libsys + quasipixel)
 env.App('snake', snake + c_runtime + app_startup + libc + libsys + quasipixel)
 
+env.App('shell', Split('shell.c lib/more.c') + c_runtime + app_startup + libc + libsys + quasipixel)
 
 env.App('ethtest', Split('ethtest.c') + c_runtime + app_startup + libc + libsys)
 
-# env.Image('image', Split('''
-#     main.app
-#     maze.app
-#     life.app
-#     pong.app
-#     edit.app
-#     tetris.app
-#     mndlbrt.app
-#     plot.app
-#     matrix.app
-#     '''))
+env.Image('image', Split('''
+    shell.app
+    snake.app
+    ethtest.app
+    '''))

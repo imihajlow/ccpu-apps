@@ -59,6 +59,6 @@ app_startup = ['$CC_DIR/ccpu-runtime/app_startup.asm']
 libc = ['../../ccpu-libc/libc.a']
 libsys = ['../../ccpu-libsys/libsys.a']
 
-fat = Split('fat/name.c fat/path.c fat/fat.c fat/last_error.c')
+fat = ['../../ccpu-libsys/libfat_impl.a']
 # Apps
-env.Loader('fileshell', Split('main.c ../lib/progressbar.c more.c loload.asm lorun.asm exec.c') + c_runtime + rom_startup + libc + libsys + fat)
+env.Loader('fatos', Split('main.c os_entry.asm') + c_runtime + rom_startup + libc + libsys + fat)
