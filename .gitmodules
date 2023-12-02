@@ -4,3 +4,6 @@
 [submodule "lanpong/uip"]
 	path = lanpong/uip
 	url = https://github.com/imihajlow/ccpu-uip.git
+[submodule "dhcpc/uip"]
+	path = dhcpc/uip
+	url = https://github.com/imihajlow/ccpu-uip.git
