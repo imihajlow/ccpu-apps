@@ -99,10 +99,10 @@ uint8_t table_cursor_loop(uint8_t max_index, bool reset_cursor) {
         index = 0;
         new_index = 0;
         cursor_file_index = 0;
+        set_cursor(col, row, CURSOR_COLOR);
     }
-    set_cursor(col, row, CURSOR_COLOR);
     while (true) {
-        uint8_t k = ps2_wait_key_pressed();
+        uint8_t k = ps2_get_key_event();
         switch (k) {
         case PS2_KEY_DOWN:
             new_index = index + 1;
@@ -117,7 +117,6 @@ uint8_t table_cursor_loop(uint8_t max_index, bool reset_cursor) {
             new_index = index - (VGA_ROWS - 1);
             break;
         default:
-            set_cursor(col, row, FILE_COLOR);
             return k;
         }
         if (new_index != index) {
