@@ -7,6 +7,7 @@
 #include <libsys/crc.h>
 #include <libsys/ps2keyboard.h>
 #include <libsys/fat/fat.h>
+#include <libsys/syscall.h>
 
 #include "uip.h"
 #include "uip_arp.h"
@@ -177,7 +178,8 @@ static bool save_config(const struct dhcpc_state *s) {
     *p = '\n';
     ++p;
 
-    if (!fat_write(fd, hi_buf, p - hi_buf))
+    size_t len = p - hi_buf;
+    if (fat_write(fd, hi_buf, len) != len)
     {
         result = false;
         goto done;
@@ -206,7 +208,7 @@ void dhcpc_configured(const struct dhcpc_state *s) {
     strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, 3), buf);
 
     if (save_config(s)) {
-        syscall(12);
+        reboot();
     } else {
         strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, 4), "error");
     }

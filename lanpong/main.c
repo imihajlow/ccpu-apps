@@ -6,11 +6,16 @@
 #include <libsys/eth.h>
 #include <libsys/crc.h>
 #include <libsys/ps2keyboard.h>
+#include <libsys/syscall.h>
+
+#include "../lib/ipcfg.h"
 
 #include "uip.h"
 #include "uip_arp.h"
 #include "clock-arch.h"
 #include "game.h"
+
+static void configure_ip(void);
 
 static uint8_t hex_digit(uint8_t x) {
     if (x < 10) {
@@ -40,14 +45,8 @@ void uip_log(char *s) {
     counter += 1;
 }
 
-static bool ip_configured = false;
-
 void iptest_appcall_udp(void) {
-    if (ip_configured) {
-        game_appcall();
-    } else {
-        dhcpc_appcall();
-    }
+    game_appcall();
 }
 
 #define BUF ((struct uip_eth_hdr *)&uip_buf[0])
@@ -97,7 +96,8 @@ void main(void)
     uip_init();
     uip_arp_init();
 
-    dhcpc_init(eth_mac, 6);
+    configure_ip();
+    game_init();
 
     while (true) {
         uip_len = network_device_read();
@@ -164,28 +164,20 @@ void main(void)
             periodic_count += 1;
             loop_count = 0;
         }
-        if (ip_configured) {
-            game_process();
-        }
+        game_process();
     }
 }
 
-void dhcpc_configured(const struct dhcpc_state *s) {
-    uip_log("DHCP configured");
-    uip_sethostaddr(s->ipaddr);
-    uip_setnetmask(s->netmask);
-    uip_setdraddr(s->default_router);
-
-    char buf[4 * 4 + 1];
-    __uitoa(s->ipaddr[0] & 0xff, buf + 0, 10);
-    __uitoa(s->ipaddr[0] >> 8, buf + 4, 10);
-    __uitoa(s->ipaddr[1] & 0xff, buf + 8, 10);
-    __uitoa(s->ipaddr[1] >> 8, buf + 12, 10);
-    memcpy(VGA_CHAR_SEG + VGA_OFFSET(0, 0), buf, 16);
-
-    ip_configured = true;
-    srand(clock_time());
-    game_init();
+static void configure_ip(void) {
+    struct ipcfg_t cfg;
+    if (!ipcfg_load(&cfg)) {
+        strcpy(VGA_CHAR_SEG, "Cannot load IP.CFG");
+        ps2_wait_key_pressed();
+        reboot();
+    }
+    uip_sethostaddr(cfg.ipaddr);
+    uip_setnetmask(cfg.netmask);
+    uip_setdraddr(cfg.default_router);
 }
 
 int getchar(void) { return 0; }

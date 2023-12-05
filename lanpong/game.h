@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define PACKED __attribute__((packed));
+#define PACKED __attribute__((packed))
 #define MAGIC_COOKIE 0x474e4f50 // "PONG"
 
 enum net_message_tag_t {
@@ -46,7 +46,7 @@ struct net_message_t {
         struct ball_board_t ball_board;
         struct board_t board;
         struct score_t score;
-    } PACKED;
+    };
 } PACKED;
 
 void game_init(void);

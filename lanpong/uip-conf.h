@@ -115,5 +115,3 @@ typedef int uip_udp_appstate_t;
 
 void iptest_appcall(void);
 void iptest_appcall_udp(void);
-
-#include "uip/apps/dhcpc/dhcpc.h"

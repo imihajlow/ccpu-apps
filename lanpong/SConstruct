@@ -44,7 +44,7 @@ libc = ['../../ccpu-libc/libc.a']
 libsys = ['../../ccpu-libsys/libsys.a']
 quasipixel = Split('../lib/quasipixel.c ../lib/qp_render.asm')
 uip = Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip/uip/timer.c uip/ccpu/uip_buf.asm uip/ccpu/chksum.asm')
-dhcpc = Split('uip/apps/dhcpc/dhcpc.c')
+ipcfg = Split('../lib/ipcfg.c')
 
 # Apps
-env.App('lanpong', Split('main.c pong.c game.c bigdigit.c') + c_runtime + app_startup + libc + libsys + uip + dhcpc)
+env.App('lanpong', Split('main.c pong.c game.c bigdigit.c') + c_runtime + app_startup + libc + libsys + uip + ipcfg)
