@@ -16,6 +16,10 @@
   init: Yes
   target: data
 
+- name: _empty
+  init: No
+  begin: 0x8000
+
 - name: ramtext
   begin: 0xB000
   init: No

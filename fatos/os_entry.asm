@@ -10,6 +10,10 @@
     .global fat_exec
     .global fat_exec_fd
     .global fat_get_last_error
+    .global fat_tell
+    .global fat_seek
+    .global syscall_putchar
+    .global fat_print_last_error
 
     .global __cc_ret
 
@@ -126,3 +130,7 @@ syscall_table:
     dw fat_exec_fd
     dw fat_get_last_error
     dw 0x0000
+    dw fat_tell
+    dw fat_seek
+    dw syscall_putchar
+    dw fat_print_last_error

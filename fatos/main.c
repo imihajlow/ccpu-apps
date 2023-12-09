@@ -44,7 +44,7 @@ void main(void) {
                 puts("Mounted successfully");
                 state = STATE_EXEC;
             } else {
-                fat_print_last_error();
+                fat_print_last_error(0);
                 puts("Trying to reinialize card...");
                 CARD_POWER_OFF();
                 attempts_left -= 1;
@@ -66,7 +66,7 @@ void main(void) {
             puts("Starting /SHELL.APP");
             if (fat_exec(0, "/SHELL.APP")) {
             } else {
-                fat_print_last_error();
+                fat_print_last_error(0);
                 state = STATE_GIVE_UP;
             }
             break;
@@ -117,4 +117,8 @@ int putchar(int x) {
         }
     }
     return 0;
+}
+
+int syscall_putchar(char _syscall_nr, int x) {
+    return putchar(x);
 }
