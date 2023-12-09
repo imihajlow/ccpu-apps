@@ -7,3 +7,6 @@
 [submodule "dhcpc/uip"]
 	path = dhcpc/uip
 	url = https://github.com/imihajlow/ccpu-uip.git
+[submodule "httpd/uip"]
+	path = httpd/uip
+	url = https://github.com/imihajlow/ccpu-uip.git
