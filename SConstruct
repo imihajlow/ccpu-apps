@@ -1,8 +1,8 @@
 import os.path
 
 # Build tools
-asmBuilder = Builder(action = 'asm.py -o $TARGET $SOURCE', suffix=".o", src_suffix=[".s", ".asm"], single_source=True, src_builder="C")
-cBuilder = Builder(action = 'ccpu-cc -I ../ccpu-libc/include -I ../ccpu-libsys/include -o $TARGET $SOURCE', suffix=".s", src_suffix=".c", single_source=True, source_scanner=CScanner)
+asmBuilder = Builder(action = 'asm.py -o $TARGET $SOURCE', suffix=".o", src_suffix=[".s", ".asm"], single_source=True)
+cBuilder = Builder(action = 'ccpu-cc -I ../ccpu-libc/include -I ../ccpu-libsys/include -o $TARGET $SOURCE', suffix=".o", src_suffix=".c", single_source=True, source_scanner=CScanner)
 def linkGenerator(source, target, env, for_signature):
     return f"link.py --layout=default-stack -m {target[1]} -o {target[0]} {' '.join(str(s) for s in source)}"
 
@@ -25,9 +25,9 @@ def loaderLinkEmitter(target, source, env):
     target.append(f"{base}.api")
     return target, source
 
-linkBuilder = Builder(generator=linkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
-loaderLinkBuilder = Builder(generator=loaderLinkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder="Asm", emitter=loaderLinkEmitter)
-appLinkBuilder = Builder(generator=appLinkGenerator, suffix=".app", src_suffix=[".o", ".a"], src_builder="Asm", emitter=linkEmitter)
+linkBuilder = Builder(generator=linkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder=["Asm", "C"], emitter=linkEmitter)
+loaderLinkBuilder = Builder(generator=loaderLinkGenerator, suffix=".bin", src_suffix=[".o", ".a"], src_builder=["Asm", "C"], emitter=loaderLinkEmitter)
+appLinkBuilder = Builder(generator=appLinkGenerator, suffix=".app", src_suffix=[".o", ".a"], src_builder=["Asm", "C"], emitter=linkEmitter)
 
 imageBuilder = Builder(action = './mkfat.sh data $SOURCES', suffix=".img", src_suffix=[".app", ".ext"])
 
