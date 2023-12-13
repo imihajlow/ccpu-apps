@@ -4,7 +4,6 @@
 #include <libsys/vga.h>
 #include <libsys/ps2keyboard.h>
 #include <libsys/card.h>
-#include "more.h"
 
 #define FAT_IMPL
 #include <libsys/fat/fat.h>

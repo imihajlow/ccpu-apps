@@ -1,0 +1,7 @@
+import os
+Import("env", "c_runtime", "rom_startup")
+
+layout = os.path.abspath("loader.yaml")
+loader_env = env.Clone(LINKFLAGS = [f"--layout={layout}"], PROGSUFFIX=".bin")
+
+loader_env.Program('fatos', Split('main.c os_entry.asm') + c_runtime + rom_startup, LIBS=['c', 'sys', 'fat_impl'])

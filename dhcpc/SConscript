@@ -1,0 +1,15 @@
+Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg")
+
+env = env.Clone()
+env.Append(CPPPATH=["uip/uip", "."])
+
+app_env = app_env.Clone()
+app_env.Append(CPPPATH=["uip/uip", "."])
+
+uip = env.Object(Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip/uip/timer.c uip/ccpu/uip_buf.asm uip/ccpu/chksum.asm'))
+dhcpc = env.Object(Split('uip/apps/dhcpc/dhcpc.c'))
+
+# Apps
+dhcpc_app = app_env.Program('dhcpc', Split('main.c') + c_runtime + app_startup + uip + dhcpc, LIBS=['c', 'sys'])
+
+Return("dhcpc_app")

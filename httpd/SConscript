@@ -1,0 +1,14 @@
+Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg")
+
+env = env.Clone()
+env.Append(CPPPATH=["uip/uip", "."])
+
+app_env = app_env.Clone()
+app_env.Append(CPPPATH=["uip/uip", "."])
+
+uip = env.Object(Split('uip/uip/uip.c uip/uip/uip_arp.c uip/uip/uiplib.c uip/uip/timer.c uip/ccpu/uip_buf.asm uip/ccpu/chksum.asm'))
+
+# Apps
+httpd_app = app_env.Program('httpd', Split('main.c httpd.c') + c_runtime + app_startup + uip + ipcfg, LIBS=['c', 'sys'])
+
+Return('httpd_app')
