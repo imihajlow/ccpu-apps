@@ -28,6 +28,7 @@ static void apply_flag(uint16_t idx, uint8_t flag);
 static void check_fall(uint16_t idx, uint8_t c, uint8_t r);
 static void check_roll(uint16_t idx, uint8_t c, uint8_t r);
 static void render_one(uint16_t idx, uint8_t obj);
+static void movement_step(uint8_t movement_flags);
 
 void engine_init(void) {
     bzero(map, sizeof(map));
@@ -40,9 +41,12 @@ static bool is_enemy(uint8_t obj) {
     return obj >= OBJ_ENEMY_N;
 }
 
-void trap(uint8_t changed_obj, uint16_t right_idx, uint16_t front_idx, uint8_t cw_state, uint8_t ccw_state) {}
+void trap(void) {}
 
-void engine_step(void) {
+void engine_step(uint8_t movement_flags) {
+    if (movement_flags) trap();
+    movement_step(movement_flags);
+    engine_collect_changed();
     uint16_t *pchange = change;
     for (uint16_t change_idx = 0; change_idx != change_count; ++change_idx, ++pchange) {
         uint16_t idx = *pchange;
@@ -382,3 +386,30 @@ static void render_one(uint16_t idx, uint8_t obj) {
     VGA_CHAR_SEG[offset] = object_char_r[obj];
 }
 
+static void move(uint8_t direction) {
+    switch (direction) {
+    case MOVE_UP: engine_up(); break;
+    case MOVE_DOWN: engine_down(); break;
+    case MOVE_LEFT: engine_left(); break;
+    case MOVE_RIGHT: engine_right(); break;
+    }
+}
+
+static const uint8_t move_flags[4] = {
+    MOVE_UP,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+};
+
+static void movement_step(uint8_t flags) {
+    static uint8_t first_flag = 0;
+    for (uint8_t i = 0; i != 4; ++i) {
+        uint8_t f = move_flags[(i + first_flag) % 4];
+        if (flags & f) {
+            move(f);
+            break;
+        }
+    }
+    first_flag += 1;
+}

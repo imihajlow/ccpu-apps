@@ -16,19 +16,38 @@ void main(void) {
         strcpy(VGA_CHAR_SEG, "cannot load");
         fat_print_last_error();
     }
+    uint8_t move_flags = 0;
     while (1) {
-        uint8_t key = ps2_get_key_event();
-        bool change = true;
-        switch (key) {
-        case PS2_KEY_UP: engine_up(); break;
-        case PS2_KEY_DOWN: engine_down(); break;
-        case PS2_KEY_LEFT: engine_left(); break;
-        case PS2_KEY_RIGHT: engine_right(); break;
-        default: change = false; break;
+        for (uint8_t i = 0; i != 6; ++i) {
+            uint8_t key = ps2_get_key_event();
+            switch (key) {
+            case PS2_KEY_UP:
+                move_flags |= MOVE_UP;
+                break;
+            case PS2_KEY_UP | PS2_KEY_RELEASE:
+                move_flags &= ~MOVE_UP;
+                break;
+            case PS2_KEY_DOWN:
+                move_flags |= MOVE_DOWN;
+                break;
+            case PS2_KEY_DOWN | PS2_KEY_RELEASE:
+                move_flags &= ~MOVE_DOWN;
+                break;
+            case PS2_KEY_LEFT:
+                move_flags |= MOVE_LEFT;
+                break;
+            case PS2_KEY_LEFT | PS2_KEY_RELEASE:
+                move_flags &= ~MOVE_LEFT;
+                break;
+            case PS2_KEY_RIGHT:
+                move_flags |= MOVE_RIGHT;
+                break;
+            case PS2_KEY_RIGHT | PS2_KEY_RELEASE:
+                move_flags &= ~MOVE_RIGHT;
+                break;
+            }
         }
-        engine_collect_changed();
-        // engine_render();
-        engine_step();
+        engine_step(move_flags);
     }
 }
 
