@@ -35,13 +35,18 @@ void engine_init(void) {
     props_init();
 }
 
-void trap(void) {}
+static bool is_enemy(uint8_t obj) {
+    obj &= ~(FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED);
+    return obj >= OBJ_ENEMY_N;
+}
+
+void trap(uint8_t changed_obj, uint16_t right_idx, uint16_t front_idx, uint8_t cw_state, uint8_t ccw_state) {}
 
 void engine_step(void) {
     uint16_t *pchange = change;
     for (uint16_t change_idx = 0; change_idx != change_count; ++change_idx, ++pchange) {
         uint16_t idx = *pchange;
-        uint8_t changed_obj = map[idx];
+        uint8_t changed_obj = map[idx] & ~FLAG_NEW;
         uint8_t changed_obj_prop = object_props[changed_obj];
         uint8_t changed_r = idx / MAP_W;
         uint8_t changed_c = idx % MAP_W;
@@ -124,24 +129,72 @@ void engine_step(void) {
                 map[idx] = FLAG_NEW | FLAG_MOVED | affected_obj;
                 render_one(idx, affected_obj);
             }
+        } else if (is_enemy(changed_obj)) {
+            uint16_t right_idx = 0; // for _FWD states cell at (0,0) will be checked
+            uint16_t front_idx;
+            uint8_t cw_state;
+            uint8_t ccw_state;
+            uint8_t move_state;
+            switch (changed_obj & ~(FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED)) {
+            case OBJ_ENEMY_N:
+                right_idx = idx + 1;
+            case OBJ_ENEMY_N_FWD:
+                front_idx = idx - MAP_W;
+                cw_state = OBJ_ENEMY_E_FWD;
+                ccw_state = OBJ_ENEMY_W;
+                move_state = OBJ_ENEMY_N | FLAG_NEW | FLAG_MOVED;
+                break;
+            case OBJ_ENEMY_E:
+                right_idx = idx + MAP_W;
+            case OBJ_ENEMY_E_FWD:
+                front_idx = idx + 1;
+                cw_state = OBJ_ENEMY_S_FWD;
+                ccw_state = OBJ_ENEMY_N;
+                move_state = OBJ_ENEMY_E | FLAG_NEW | FLAG_MOVED;
+                break;
+            case OBJ_ENEMY_S:
+                right_idx = idx - 1;
+            case OBJ_ENEMY_S_FWD:
+                front_idx = idx + MAP_W;
+                cw_state = OBJ_ENEMY_W_FWD;
+                ccw_state = OBJ_ENEMY_E;
+                move_state = OBJ_ENEMY_S | FLAG_NEW | FLAG_MOVED;
+                break;
+            case OBJ_ENEMY_W:
+                right_idx = idx - MAP_W;
+            case OBJ_ENEMY_W_FWD:
+                front_idx = idx - 1;
+                cw_state = OBJ_ENEMY_N_FWD;
+                ccw_state = OBJ_ENEMY_S;
+                move_state = OBJ_ENEMY_W | FLAG_NEW | FLAG_MOVED;
+                break;
+            }
+            uint8_t front_obj = map[front_idx];
+            if ((front_obj & ~(FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED)) == OBJ_PLAYER) {
+                explosion(front_idx);
+                continue;
+            }
+            uint8_t right_obj = map[right_idx];
+            uint8_t right_obj_prop = object_props[right_obj];
+            if (right_obj_prop & PROP_EMPTY) {
+                map[idx] = FLAG_NEW | FLAG_MOVED | cw_state;
+                render_one(idx, cw_state);
+                continue;
+            }
+            uint8_t front_obj_prop = object_props[front_obj];
+            if (front_obj_prop & PROP_EMPTY) {
+                map[idx] = FLAG_NEW | FLAG_MOVED | OBJ_EMPTY;
+                map[front_idx] = move_state;
+                map[idx - MAP_W] |= FLAG_NEW;
+                render_one(idx, OBJ_EMPTY);
+                render_one(front_idx, move_state);
+                continue;
+            }
+            map[idx] = FLAG_NEW | FLAG_MOVED | ccw_state;
+            render_one(idx, ccw_state);
         }
     }
 }
-
-/*
-void engine_collect_changed(void) {
-    uint16_t i = 0;
-    uint16_t change_idx = 0;
-    for (uint8_t *pobject = map; pobject != map + MAP_W * MAP_H; ++pobject, ++i) {
-        uint8_t obj = *pobject;
-        if ((obj & FLAG_NEW) && (obj & ~(FLAG_NEW | FLAG_MOVED)) == OBJ_EMPTY) {
-            change[change_idx] = i;
-            ++change_idx;
-        }
-        *pobject = obj & ~(FLAG_NEW | FLAG_MOVED);
-    }
-    change_count = change_idx;
-}*/
 
 static char fat_buf[64] __attribute__((section("bss_hi")));
 
@@ -171,10 +224,10 @@ bool engine_load(const char *filename) {
             case '*': obj = OBJ_GEM; break;
             case 'n': obj = OBJ_BOX; break;
             case 'b': obj = OBJ_BOMB; break;
-            case '^': obj = OBJ_ENEMY_N; break;
-            case '<': obj = OBJ_ENEMY_E; break;
-            case 'v': obj = OBJ_ENEMY_S; break;
-            case '>': obj = OBJ_ENEMY_W; break;
+            case '^': obj = OBJ_ENEMY_S | FLAG_NEW; break;
+            case '<': obj = OBJ_ENEMY_E | FLAG_NEW; break;
+            case 'v': obj = OBJ_ENEMY_N | FLAG_NEW; break;
+            case '>': obj = OBJ_ENEMY_W | FLAG_NEW; break;
             }
             if (obj != 0xff) {
                 if (obj == OBJ_PLAYER) {

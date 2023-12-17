@@ -2,9 +2,9 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#define FLAG_NEW 0x10 // this cell has to be checked on next turn
-#define FLAG_MOVED 0x20 // this cell has been filled on this turn
-#define FLAG_EXPLOSION 0x40 // explosion in this cell
+#define FLAG_NEW 0x20 // this cell has to be checked on next turn
+#define FLAG_MOVED 0x40 // this cell has been filled on this turn
+#define FLAG_EXPLOSION 0x80 // explosion in this cell
 
 #define PROP_EMPTY (1 << 0) // empty space
 #define PROP_ROLL_FALL (1 << 1) // falls if nothing is below it, rolls when sits on top of something with FLAG_ROUND
@@ -29,10 +29,14 @@ typedef enum Object {
     OBJ_ENEMY_E,
     OBJ_ENEMY_S,
     OBJ_ENEMY_W,
+    OBJ_ENEMY_N_FWD,
+    OBJ_ENEMY_E_FWD,
+    OBJ_ENEMY_S_FWD,
+    OBJ_ENEMY_W_FWD,
     OBJ_TOTAL,
 } Object;
 
-static_assert(OBJ_TOTAL <= 16, "No more than 16 objects!");
+static_assert(OBJ_TOTAL <= 32, "No more than 32 objects!");
 
 void engine_init(void);
 void engine_step(void);

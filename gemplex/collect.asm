@@ -8,9 +8,9 @@
     .const idx = 0xc800 + 8 * 1
     .const pchange = 0xc800 + 8 * 2
 
-    .const FLAG_NEW = 0x10
-    .const FLAG_MOVED = 0x20
-    .const FLAG_EXPLOSION = 0x40
+    .const FLAG_NEW = 0x20
+    .const FLAG_MOVED = 0x40
+    .const FLAG_EXPLOSION = 0x80
 
     .section text.engine_collect_changed
 engine_collect_changed:
@@ -68,21 +68,6 @@ engine_collect_changed_loop:
         ldi ph, hi(engine_collect_changed_not_new)
         ldi pl, lo(engine_collect_changed_not_new)
         jz
-
-        ; explosion?
-        ldi a, FLAG_EXPLOSION
-        and a, b
-        ldi ph, hi(engine_collect_changed_rec_new)
-        ldi pl, lo(engine_collect_changed_rec_new)
-        jnz
-
-        ; empty cell?
-        ldi a, ~(FLAG_NEW | FLAG_MOVED)
-        and a, b
-        ldi ph, hi(engine_collect_changed_not_new)
-        ldi pl, lo(engine_collect_changed_not_new)
-        jnz
-
 
 engine_collect_changed_rec_new:
 
