@@ -13,7 +13,8 @@
 #define MAP_H 30
 #define MAX_CHANGES (MAP_W * MAP_H)
 
-#define IS_NORMAL_OBJECT(obj) (!((obj) & (FLAG_EXPLOSION | FLAG_MOVED)))
+#define DELAY_CYCLES_PRO_CHANGE 20
+#define MAX_CHANGES_TO_SLOW_DOWN 200
 
 uint8_t map[MAP_W * MAP_H] __attribute__((aligned(256)));
 
@@ -71,13 +72,11 @@ void engine_step(uint8_t movement_flags) {
                 map[idx] = FLAG_NEW | FLAG_MOVED | n_obj;
                 render_one(n_idx, OBJ_EMPTY);
                 render_one(idx, n_obj);
-                if (n_obj_prop & PROP_EXPLODE) {
+                uint8_t s_obj_prop = object_props[s_obj];
+                if ((n_obj_prop & PROP_EXPLODE) && !(s_obj_prop & PROP_EMPTY)) {
                     explosion(idx);
-                } else if (IS_NORMAL_OBJECT(s_obj)) {
-                    uint8_t s_obj_prop = object_props[s_obj];
-                    if (s_obj_prop & PROP_EXPLODE) {
-                        explosion(s_idx);
-                    }
+                } else if (s_obj_prop & PROP_EXPLODE) {
+                    explosion(s_idx);
                 }
                 map[s_idx] |= FLAG_NEW;
                 map[w_idx] |= FLAG_NEW;
@@ -146,7 +145,7 @@ void engine_step(uint8_t movement_flags) {
                 front_idx = idx - MAP_W;
                 cw_state = OBJ_ENEMY_E_FWD;
                 ccw_state = OBJ_ENEMY_W;
-                move_state = OBJ_ENEMY_N | FLAG_NEW | FLAG_MOVED;
+                move_state = OBJ_ENEMY_N | FLAG_NEW;
                 break;
             case OBJ_ENEMY_E:
                 right_idx = idx + MAP_W;
@@ -154,7 +153,7 @@ void engine_step(uint8_t movement_flags) {
                 front_idx = idx + 1;
                 cw_state = OBJ_ENEMY_S_FWD;
                 ccw_state = OBJ_ENEMY_N;
-                move_state = OBJ_ENEMY_E | FLAG_NEW | FLAG_MOVED;
+                move_state = OBJ_ENEMY_E | FLAG_NEW;
                 break;
             case OBJ_ENEMY_S:
                 right_idx = idx - 1;
@@ -162,7 +161,7 @@ void engine_step(uint8_t movement_flags) {
                 front_idx = idx + MAP_W;
                 cw_state = OBJ_ENEMY_W_FWD;
                 ccw_state = OBJ_ENEMY_E;
-                move_state = OBJ_ENEMY_S | FLAG_NEW | FLAG_MOVED;
+                move_state = OBJ_ENEMY_S | FLAG_NEW;
                 break;
             case OBJ_ENEMY_W:
                 right_idx = idx - MAP_W;
@@ -170,7 +169,7 @@ void engine_step(uint8_t movement_flags) {
                 front_idx = idx - 1;
                 cw_state = OBJ_ENEMY_N_FWD;
                 ccw_state = OBJ_ENEMY_S;
-                move_state = OBJ_ENEMY_W | FLAG_NEW | FLAG_MOVED;
+                move_state = OBJ_ENEMY_W | FLAG_NEW;
                 break;
             }
             uint8_t front_obj = map[front_idx];
@@ -181,21 +180,26 @@ void engine_step(uint8_t movement_flags) {
             uint8_t right_obj = map[right_idx];
             uint8_t right_obj_prop = object_props[right_obj];
             if (right_obj_prop & PROP_EMPTY) {
-                map[idx] = FLAG_NEW | FLAG_MOVED | cw_state;
+                map[idx] = FLAG_NEW | cw_state;
                 render_one(idx, cw_state);
                 continue;
             }
             uint8_t front_obj_prop = object_props[front_obj];
             if (front_obj_prop & PROP_EMPTY) {
-                map[idx] = FLAG_NEW | FLAG_MOVED | OBJ_EMPTY;
+                map[idx] = FLAG_NEW | OBJ_EMPTY;
                 map[front_idx] = move_state;
                 map[idx - MAP_W] |= FLAG_NEW;
                 render_one(idx, OBJ_EMPTY);
                 render_one(front_idx, move_state);
                 continue;
             }
-            map[idx] = FLAG_NEW | FLAG_MOVED | ccw_state;
+            map[idx] = FLAG_NEW | ccw_state;
             render_one(idx, ccw_state);
+        }
+    }
+
+    for (uint16_t i = change_count; i < MAX_CHANGES_TO_SLOW_DOWN; ++i) {
+        for (volatile uint16_t j = 0; j != DELAY_CYCLES_PRO_CHANGE; ++j) {
         }
     }
 }
