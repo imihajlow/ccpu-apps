@@ -69,10 +69,20 @@ engine_collect_changed_loop:
         ldi pl, lo(engine_collect_changed_not_new)
         jz
 
+        ; explosion?
+        ldi a, FLAG_EXPLOSION
+        and a, b
+        ldi ph, hi(engine_collect_changed_rec_new)
+        ldi pl, lo(engine_collect_changed_rec_new)
+        jnz
+
         ; empty cell?
         ldi a, ~(FLAG_NEW | FLAG_MOVED)
         and a, b
+        ldi ph, hi(engine_collect_changed_not_new)
+        ldi pl, lo(engine_collect_changed_not_new)
         jnz
+
 
 engine_collect_changed_rec_new:
 

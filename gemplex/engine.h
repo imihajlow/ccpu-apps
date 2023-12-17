@@ -2,8 +2,12 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#define PROP_ROLL (1 << 0) // rolling when sits on top of something with FLAG_ROUND
-#define PROP_FALL (1 << 1) // falls if nothing is below it
+#define FLAG_NEW 0x10 // this cell has to be checked on next turn
+#define FLAG_MOVED 0x20 // this cell has been filled on this turn
+#define FLAG_EXPLOSION 0x40 // explosion in this cell
+
+#define PROP_EMPTY (1 << 0) // empty space
+#define PROP_ROLL_FALL (1 << 1) // falls if nothing is below it, rolls when sits on top of something with FLAG_ROUND
 #define PROP_EAT (1 << 2) // can be eaten
 #define PROP_EXPLODE (1 << 3) // explodes when falls or if struck above
 #define PROP_DESTROY (1 << 4) // can be destroyed by explosions
