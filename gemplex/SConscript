@@ -2,6 +2,6 @@ Import("env", "app_env", "c_runtime", "app_startup")
 
 
 # Apps
-gemplex_app = app_env.Program('gemplex', Split('main.c engine.c render.asm collect.asm props.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
+gemplex_app = app_env.Program('gemplex', Split('main.c engine.c render.asm collect.asm props.c game.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
 
 Return("gemplex_app")

@@ -10,6 +10,7 @@ uint8_t object_props[PROP_ARRAY_LEN] = {
     [OBJ_PLAYER     ] = PROP_DESTROY | PROP_EXPLODE,
     [OBJ_WALL       ] = 0,
     [OBJ_EXIT       ] = PROP_DESTROY,
+    [OBJ_EXIT_OPEN  ] = PROP_DESTROY | PROP_EAT,
     [OBJ_GROUND     ] = PROP_DESTROY | PROP_EAT,
     [OBJ_ROCK       ] = PROP_DESTROY | PROP_PUSH | PROP_ROUND | PROP_ROLL_FALL,
     [OBJ_GEM        ] = PROP_DESTROY | PROP_EAT | PROP_ROUND | PROP_ROLL_FALL,
@@ -43,6 +44,7 @@ char object_char_l[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
     [OBJ_ENEMY_S_FWD] = 166,
     [OBJ_ENEMY_W_FWD] = 164,
     [OBJ_EXIT] = 216,
+    [OBJ_EXIT_OPEN] = 216,
 };
 
 char object_char_r[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
@@ -63,6 +65,7 @@ char object_char_r[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
     [OBJ_ENEMY_S_FWD] = 167,
     [OBJ_ENEMY_W_FWD] = 145,
     [OBJ_EXIT] = 216,
+    [OBJ_EXIT_OPEN] = 216,
 };
 
 uint8_t object_color[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
@@ -82,7 +85,8 @@ uint8_t object_color[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
     [OBJ_ENEMY_E_FWD] = COLOR(COLOR_MAGENTA, COLOR_BLACK),
     [OBJ_ENEMY_S_FWD] = COLOR(COLOR_MAGENTA, COLOR_BLACK),
     [OBJ_ENEMY_W_FWD] = COLOR(COLOR_MAGENTA, COLOR_BLACK),
-    [OBJ_EXIT] = COLOR(COLOR_YELLOW, COLOR_BLACK),
+    [OBJ_EXIT] = COLOR(COLOR_LIGHT_RED, COLOR_BLACK),
+    [OBJ_EXIT_OPEN] = COLOR(COLOR_LIGHT_GREEN, COLOR_BLACK),
 };
 
 void props_init(void) {

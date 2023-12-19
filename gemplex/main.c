@@ -6,10 +6,12 @@
 #include <libsys/fat/fat.h>
 
 #include "engine.h"
+#include "game.h"
 
 void main(void) {
     vga_clear(COLOR(COLOR_GRAY, COLOR_BLACK));
     engine_init();
+    game_prepare_level();
     if (engine_load("/DATA/LVL1.TXT")) {
         engine_render();
     } else {

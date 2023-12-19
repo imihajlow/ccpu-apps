@@ -14,12 +14,13 @@
 #define PROP_DESTROY    (1 << 4) // can be destroyed by explosions
 #define PROP_ROUND      (1 << 5) // rolling things roll if placed on top of this
 #define PROP_PUSH       (1 << 6) // can be pushed
-#define PROP_LETHAL     (1 << 7) // letal to touch
+#define PROP_LETHAL     (1 << 7) // lethal to touch
 
 typedef enum Object {
     OBJ_EMPTY = 0,
     OBJ_PLAYER,
     OBJ_EXIT,
+    OBJ_EXIT_OPEN,
     OBJ_WALL,
     OBJ_GROUND,
     OBJ_ROCK,
@@ -48,8 +49,3 @@ void engine_step(uint8_t movement_flags);
 void engine_render(void);
 bool engine_load(const char *filename);
 void engine_collect_changed(void);
-
-void engine_up(void);
-void engine_down(void);
-void engine_left(void);
-void engine_right(void);

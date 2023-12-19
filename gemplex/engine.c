@@ -8,13 +8,21 @@
 #include <libsys/fat/fat.h>
 
 #include "props.h"
+#include "game.h"
 
 #define MAP_W 32
 #define MAP_H 30
 #define MAX_CHANGES (MAP_W * MAP_H)
 
+#define EMULATOR 1
+
+#if EMULATOR
+#define DELAY_CYCLES_PRO_CHANGE 400
+#define MAX_CHANGES_TO_SLOW_DOWN 200
+#else
 #define DELAY_CYCLES_PRO_CHANGE 20
 #define MAX_CHANGES_TO_SLOW_DOWN 200
+#endif
 
 uint8_t map[MAP_W * MAP_H] __attribute__((aligned(256)));
 
@@ -23,6 +31,7 @@ uint16_t change_count;
 
 static uint8_t player_x;
 static uint8_t player_y;
+static uint16_t gems_left;
 
 static void explosion(uint16_t idx);
 static void apply_flag(uint16_t idx, uint8_t flag);
@@ -30,10 +39,15 @@ static void check_fall(uint16_t idx, uint8_t c, uint8_t r);
 static void check_roll(uint16_t idx, uint8_t c, uint8_t r);
 static void render_one(uint16_t idx, uint8_t obj);
 static void movement_step(uint8_t movement_flags);
+static void player_up(void);
+static void player_down(void);
+static void player_left(void);
+static void player_right(void);
 
 void engine_init(void) {
     bzero(map, sizeof(map));
     change_count = 0;
+    gems_left = 0;
     props_init();
 }
 
@@ -218,6 +232,7 @@ bool engine_load(const char *filename) {
     uint16_t bytes_read;
     uint8_t *p = map;
     uint16_t count = 0;
+    gems_left = 0;
     do {
         bytes_read = fat_read(fd, fat_buf, sizeof(fat_buf));
         for (uint8_t i = 0; i != (uint8_t)bytes_read; ++i) {
@@ -227,7 +242,7 @@ bool engine_load(const char *filename) {
             case 'p': obj = OBJ_PLAYER; break;
             case 'E': obj = OBJ_EXIT; break;
             case '=': obj = OBJ_WALL; break;
-            case '#': obj = OBJ_GROUND; break;
+            case '.': obj = OBJ_GROUND; break;
             case 'o': obj = OBJ_ROCK; break;
             case '*': obj = OBJ_GEM; break;
             case 'n': obj = OBJ_BOX; break;
@@ -241,6 +256,8 @@ bool engine_load(const char *filename) {
                 if (obj == OBJ_PLAYER) {
                     player_x = count % MAP_W;
                     player_y = count / MAP_W;
+                } else if (obj == OBJ_GEM) {
+                    gems_left += 1;
                 }
                 *p = obj;
                 ++p;
@@ -253,16 +270,39 @@ bool engine_load(const char *filename) {
         }
     } while (bytes_read == sizeof(fat_buf));
 done:
+    game_update_gems_left(gems_left);
     fat_close(fd);
     return result;
 }
 
-void engine_up(void) {
+static void open_exit(void) {
+    uint8_t *p = map;
+    for (uint16_t idx = 0; idx != MAP_W * MAP_H; ++idx, ++p) {
+        uint8_t obj = *p;
+        if ((obj & ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION)) == OBJ_EXIT) {
+            *p = FLAG_NEW | OBJ_EXIT_OPEN;
+            render_one(idx, OBJ_EXIT_OPEN);
+        }
+    }
+}
+
+static void check_gem(uint8_t obj) {
+    if ((obj & ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION)) == OBJ_GEM) {
+        gems_left -= 1;
+        if (!gems_left) {
+            open_exit();
+        }
+        game_update_gems_left(gems_left);
+    }
+}
+
+static void player_up(void) {
     uint16_t player_idx = player_x + player_y * MAP_W;
     uint16_t top_idx = player_idx - MAP_W;
     uint8_t top_obj = map[top_idx];
     uint8_t top_obj_prop = object_props[top_obj];
     if (top_obj_prop & PROP_EAT) {
+        check_gem(top_obj);
         map[top_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         player_y -= 1;
@@ -272,12 +312,13 @@ void engine_up(void) {
     }
 }
 
-void engine_down(void) {
+static void player_down(void) {
     uint16_t player_idx = player_x + player_y * MAP_W;
     uint16_t bot_idx = player_idx + MAP_W;
     uint8_t bot_obj = map[bot_idx];
     uint8_t bot_obj_prop = object_props[bot_obj];
     if (bot_obj_prop & PROP_EAT) {
+        check_gem(bot_obj);
         map[bot_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         player_y += 1;
@@ -287,12 +328,13 @@ void engine_down(void) {
     }
 }
 
-void engine_left(void) {
+static void player_left(void) {
     uint16_t player_idx = player_x + player_y * MAP_W; // 13 + 10 * 32 = 333
     uint16_t left_idx = player_idx - 1;
     uint8_t left_obj = map[left_idx];
     uint8_t left_obj_prop = object_props[left_obj];
     if (left_obj_prop & PROP_EAT) {
+        check_gem(left_obj);
         map[left_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         render_one(left_idx, OBJ_PLAYER);
@@ -317,12 +359,13 @@ void engine_left(void) {
     }
 }
 
-void engine_right(void) {
+static void player_right(void) {
     uint16_t player_idx = player_x + player_y * MAP_W;
     uint16_t right_idx = player_idx + 1;
     uint8_t right_obj = map[right_idx];
     uint8_t right_obj_prop = object_props[right_obj];
     if (!right_obj || (right_obj_prop & PROP_EAT)) {
+        check_gem(right_obj);
         map[right_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         render_one(right_idx, OBJ_PLAYER);
@@ -392,10 +435,10 @@ static void render_one(uint16_t idx, uint8_t obj) {
 
 static void move(uint8_t direction) {
     switch (direction) {
-    case MOVE_UP: engine_up(); break;
-    case MOVE_DOWN: engine_down(); break;
-    case MOVE_LEFT: engine_left(); break;
-    case MOVE_RIGHT: engine_right(); break;
+    case MOVE_UP: player_up(); break;
+    case MOVE_DOWN: player_down(); break;
+    case MOVE_LEFT: player_left(); break;
+    case MOVE_RIGHT: player_right(); break;
     }
 }
 
@@ -407,13 +450,13 @@ static const uint8_t move_flags[4] = {
 };
 
 static void movement_step(uint8_t flags) {
-    static uint8_t first_flag = 0;
+    static uint8_t dir = 0;
     for (uint8_t i = 0; i != 4; ++i) {
-        uint8_t f = move_flags[(i + first_flag) % 4];
+        uint8_t f = move_flags[(i ^ dir) % 4];
         if (flags & f) {
             move(f);
             break;
         }
     }
-    first_flag += 1;
+    dir = ~dir;
 }
