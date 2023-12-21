@@ -9,48 +9,18 @@
 #include "game.h"
 
 void main(void) {
-    vga_clear(COLOR(COLOR_GRAY, COLOR_BLACK));
-    engine_init();
-    game_prepare_level();
-    if (engine_load("/DATA/LVL1.TXT")) {
-        engine_render();
-    } else {
-        strcpy(VGA_CHAR_SEG, "cannot load");
-        fat_print_last_error();
-    }
-    uint8_t move_flags = 0;
-    while (1) {
-        for (uint8_t i = 0; i != 50; ++i) {
-            uint8_t key = ps2_get_key_event();
-            switch (key) {
-            case PS2_KEY_UP:
-                move_flags |= MOVE_UP;
-                goto step;
-            case PS2_KEY_UP | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_UP;
-                goto step;
-            case PS2_KEY_DOWN:
-                move_flags |= MOVE_DOWN;
-                goto step;
-            case PS2_KEY_DOWN | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_DOWN;
-                goto step;
-            case PS2_KEY_LEFT:
-                move_flags |= MOVE_LEFT;
-                goto step;
-            case PS2_KEY_LEFT | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_LEFT;
-                goto step;
-            case PS2_KEY_RIGHT:
-                move_flags |= MOVE_RIGHT;
-                goto step;
-            case PS2_KEY_RIGHT | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_RIGHT;
-                goto step;
-            }
+    while (true) {
+        game_show_menu();
+        const char *fname = game_menu_loop();
+        engine_init();
+        game_prepare_level();
+        if (engine_load(fname)) {
+            engine_render();
+        } else {
+            strcpy(VGA_CHAR_SEG, "cannot load");
+            fat_print_last_error();
         }
-step:
-        engine_step(move_flags);
+        game_loop();
     }
 }
 

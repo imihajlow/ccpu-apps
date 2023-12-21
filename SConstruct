@@ -1,6 +1,6 @@
 import os
 
-imageBuilder = Builder(action = './mkfat.sh data $SOURCES', suffix=".img", src_suffix=[".app", ".ext"])
+imageBuilder = Builder(action = './mkfat.sh data gemplex/GEMPLEX $SOURCES', suffix=".img", src_suffix=[".app", ".ext"])
 
 env = Environment(
     CC='ccpu-cc',

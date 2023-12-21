@@ -32,6 +32,7 @@ uint16_t change_count;
 static uint8_t player_x;
 static uint8_t player_y;
 static uint16_t gems_left;
+static bool lost;
 
 static void explosion(uint16_t idx);
 static void apply_flag(uint16_t idx, uint8_t flag);
@@ -48,6 +49,7 @@ void engine_init(void) {
     bzero(map, sizeof(map));
     change_count = 0;
     gems_left = 0;
+    lost = false;
     props_init();
 }
 
@@ -391,6 +393,10 @@ static void player_right(void) {
 }
 
 static void explosion(uint16_t idx) {
+    uint8_t obj = map[idx];
+    if ((obj & ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION)) == OBJ_PLAYER) {
+        lost = true;
+    }
     map[idx] = OBJ_EMPTY;
     apply_flag(idx, FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED);
     render_one(idx, FLAG_EXPLOSION);
@@ -450,6 +456,10 @@ static const uint8_t move_flags[4] = {
 };
 
 static void movement_step(uint8_t flags) {
+    if (lost) {
+        return;
+    }
+
     static uint8_t dir = 0;
     for (uint8_t i = 0; i != 4; ++i) {
         uint8_t f = move_flags[(i ^ dir) % 4];
