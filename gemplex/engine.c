@@ -32,7 +32,7 @@ uint16_t change_count;
 static uint8_t player_x;
 static uint8_t player_y;
 static uint16_t gems_left;
-static bool lost;
+static bool game_over;
 
 static void explosion(uint16_t idx);
 static void apply_flag(uint16_t idx, uint8_t flag);
@@ -49,7 +49,7 @@ void engine_init(void) {
     bzero(map, sizeof(map));
     change_count = 0;
     gems_left = 0;
-    lost = false;
+    game_over = false;
     props_init();
 }
 
@@ -288,13 +288,17 @@ static void open_exit(void) {
     }
 }
 
-static void check_gem(uint8_t obj) {
-    if ((obj & ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION)) == OBJ_GEM) {
+static void check_eaten(uint8_t obj) {
+    obj &= ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION);
+    if (obj == OBJ_GEM) {
         gems_left -= 1;
         if (!gems_left) {
             open_exit();
         }
         game_update_gems_left(gems_left);
+    } else if (obj == OBJ_EXIT_OPEN) {
+        game_over = true;
+        game_win();
     }
 }
 
@@ -304,7 +308,7 @@ static void player_up(void) {
     uint8_t top_obj = map[top_idx];
     uint8_t top_obj_prop = object_props[top_obj];
     if (top_obj_prop & PROP_EAT) {
-        check_gem(top_obj);
+        check_eaten(top_obj);
         map[top_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         player_y -= 1;
@@ -320,7 +324,7 @@ static void player_down(void) {
     uint8_t bot_obj = map[bot_idx];
     uint8_t bot_obj_prop = object_props[bot_obj];
     if (bot_obj_prop & PROP_EAT) {
-        check_gem(bot_obj);
+        check_eaten(bot_obj);
         map[bot_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         player_y += 1;
@@ -336,7 +340,7 @@ static void player_left(void) {
     uint8_t left_obj = map[left_idx];
     uint8_t left_obj_prop = object_props[left_obj];
     if (left_obj_prop & PROP_EAT) {
-        check_gem(left_obj);
+        check_eaten(left_obj);
         map[left_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         render_one(left_idx, OBJ_PLAYER);
@@ -367,7 +371,7 @@ static void player_right(void) {
     uint8_t right_obj = map[right_idx];
     uint8_t right_obj_prop = object_props[right_obj];
     if (!right_obj || (right_obj_prop & PROP_EAT)) {
-        check_gem(right_obj);
+        check_eaten(right_obj);
         map[right_idx] = OBJ_PLAYER | FLAG_NEW;
         map[player_idx] = OBJ_EMPTY | FLAG_NEW;
         render_one(right_idx, OBJ_PLAYER);
@@ -395,7 +399,8 @@ static void player_right(void) {
 static void explosion(uint16_t idx) {
     uint8_t obj = map[idx];
     if ((obj & ~(FLAG_NEW | FLAG_MOVED | FLAG_EXPLOSION)) == OBJ_PLAYER) {
-        lost = true;
+        game_over = true;
+        game_lose();
     }
     map[idx] = OBJ_EMPTY;
     apply_flag(idx, FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED);
@@ -456,7 +461,7 @@ static const uint8_t move_flags[4] = {
 };
 
 static void movement_step(uint8_t flags) {
-    if (lost) {
+    if (game_over) {
         return;
     }
 

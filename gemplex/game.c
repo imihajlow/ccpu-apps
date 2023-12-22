@@ -17,6 +17,7 @@
 #define MENU_FIRST_COLUMN ((VGA_COLS - MENU_COLUMN_WIDTH * MENU_COLUMNS) / 2)
 #define CAPTION_ROW 3
 #define GEMS_ROW 5
+#define FACE_ROW 8
 #define MAX_LEVELS 40
 #define MENU_MAIN_COLOR COLOR(COLOR_WHITE, COLOR_GRAY)
 #define MENU_CURSOR_COLOR COLOR(COLOR_WHITE, COLOR_BLUE)
@@ -34,6 +35,7 @@ static bool load_dir(void);
 static void show_table(void);
 static void set_cursor_color(uint8_t color);
 static const char *get_selected_level_filename(void);
+static void draw_face(const char *data, uint8_t color);
 
 void game_show_menu(void) {
     game_state.loaded = false;
@@ -144,6 +146,86 @@ void game_loop(void) {
         }
 step:
         engine_step(move_flags);
+    }
+}
+
+#define TOP 223
+#define BOT 220
+#define FUL 219
+#define NUL 0
+/*
+.....######.....
+...##########...
+..##........##..
+.##..........##.
+.##..........##.
+##..##....##..##
+##..##....##..##
+##............##
+##............##
+##..#......#..##
+##..##....##..##
+.##..######..##.
+.##...####...##.
+..##........##..
+...##########...
+.....######.....
+*/
+static const char happy_face[] = {
+    NUL,NUL,NUL,BOT,BOT,FUL,FUL,FUL,FUL,FUL,FUL,BOT,BOT,NUL,NUL,NUL,
+    NUL,BOT,FUL,TOP,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,TOP,FUL,BOT,NUL,
+    BOT,FUL,TOP,NUL,BOT,BOT,NUL,NUL,NUL,NUL,BOT,BOT,NUL,TOP,FUL,BOT,
+    FUL,FUL,NUL,NUL,TOP,TOP,NUL,NUL,NUL,NUL,TOP,TOP,NUL,NUL,FUL,FUL,
+    FUL,FUL,NUL,NUL,BOT,NUL,NUL,NUL,NUL,NUL,NUL,BOT,NUL,NUL,FUL,FUL,
+    TOP,FUL,BOT,NUL,TOP,FUL,BOT,BOT,BOT,BOT,FUL,TOP,NUL,BOT,FUL,TOP,
+    NUL,TOP,FUL,BOT,NUL,NUL,TOP,TOP,TOP,TOP,NUL,NUL,BOT,FUL,TOP,NUL,
+    NUL,NUL,NUL,TOP,TOP,FUL,FUL,FUL,FUL,FUL,FUL,TOP,TOP,NUL,NUL,NUL,
+};
+void game_win(void) {
+    draw_face(happy_face, COLOR(COLOR_GREEN, COLOR_GRAY));
+}
+
+/*
+.....######.....
+...##########...
+..##........##..
+.##..........##.
+.##..........##.
+##..##....##..##
+##..##....##..##
+##............##
+##............##
+##....####....##
+##...######...##
+.##..#....#..##.
+.##..........##.
+..##........##..
+...##########...
+.....######.....
+*/
+static const char sad_face[] = {
+    NUL,NUL,NUL,BOT,BOT,FUL,FUL,FUL,FUL,FUL,FUL,BOT,BOT,NUL,NUL,NUL,
+    NUL,BOT,FUL,TOP,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,TOP,FUL,BOT,NUL,
+    BOT,FUL,TOP,NUL,BOT,BOT,NUL,NUL,NUL,NUL,BOT,BOT,NUL,TOP,FUL,BOT,
+    FUL,FUL,NUL,NUL,TOP,TOP,NUL,NUL,NUL,NUL,TOP,TOP,NUL,NUL,FUL,FUL,
+    FUL,FUL,NUL,NUL,NUL,NUL,BOT,BOT,BOT,BOT,NUL,NUL,NUL,NUL,FUL,FUL,
+    TOP,FUL,BOT,NUL,NUL,FUL,TOP,TOP,TOP,TOP,FUL,NUL,NUL,BOT,FUL,TOP,
+    NUL,TOP,FUL,BOT,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,BOT,FUL,TOP,NUL,
+    NUL,NUL,NUL,TOP,TOP,FUL,FUL,FUL,FUL,FUL,FUL,TOP,TOP,NUL,NUL,NUL,
+};
+void game_lose(void) {
+    draw_face(sad_face, COLOR(COLOR_RED, COLOR_GRAY));
+}
+
+static void draw_face(const char *data, uint8_t color) {
+    char *dst_char = VGA_CHAR_SEG + VGA_OFFSET(64, FACE_ROW);
+    char *dst_color = VGA_COLOR_SEG + VGA_OFFSET(64, FACE_ROW);
+    for (uint8_t r = 0; r != 8; ++r) {
+        memcpy(dst_char, data, 16);
+        memset(dst_color, color, 16);
+        dst_char += VGA_OFFSET(0,1);
+        dst_color += VGA_OFFSET(0,1);
+        data += 16;
     }
 }
 
