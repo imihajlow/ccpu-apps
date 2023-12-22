@@ -145,7 +145,7 @@ void game_loop(void) {
             }
         }
 step:
-        engine_step(move_flags);
+        engine_step(move_flags, ps2_modifiers_mask & PS2_MASK_SHIFT);
     }
 }
 

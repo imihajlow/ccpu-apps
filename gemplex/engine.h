@@ -45,7 +45,7 @@ static_assert(OBJ_TOTAL <= 32, "No more than 32 objects!");
 #define MOVE_RIGHT (1 << 3)
 
 void engine_init(void);
-void engine_step(uint8_t movement_flags);
+void engine_step(uint8_t movement_flags, bool snap);
 void engine_render(void);
 bool engine_load(const char *filename);
 void engine_collect_changed(void);

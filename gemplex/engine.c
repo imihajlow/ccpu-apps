@@ -39,7 +39,7 @@ static void apply_flag(uint16_t idx, uint8_t flag);
 static void check_fall(uint16_t idx, uint8_t c, uint8_t r);
 static void check_roll(uint16_t idx, uint8_t c, uint8_t r);
 static void render_one(uint16_t idx, uint8_t obj);
-static void movement_step(uint8_t movement_flags);
+static void movement_step(uint8_t movement_flags, bool snap);
 static void player_up(void);
 static void player_down(void);
 static void player_left(void);
@@ -58,11 +58,8 @@ static bool is_enemy(uint8_t obj) {
     return obj >= OBJ_ENEMY_N;
 }
 
-void trap(void) {}
-
-void engine_step(uint8_t movement_flags) {
-    if (movement_flags) trap();
-    movement_step(movement_flags);
+void engine_step(uint8_t movement_flags, bool snap) {
+    movement_step(movement_flags, snap);
     engine_collect_changed();
     uint16_t *pchange = change;
     for (uint16_t change_idx = 0; change_idx != change_count; ++change_idx, ++pchange) {
@@ -453,6 +450,23 @@ static void move(uint8_t direction) {
     }
 }
 
+static void snap_field(uint8_t direction) {
+    uint16_t snap_idx = player_x + player_y * MAP_W;
+    switch (direction) {
+    case MOVE_UP: snap_idx -= MAP_W; break;
+    case MOVE_DOWN: snap_idx += MAP_W; break;
+    case MOVE_LEFT: snap_idx -= 1; break;
+    case MOVE_RIGHT: snap_idx += 1; break;
+    }
+    uint8_t obj = map[snap_idx];
+    uint8_t prop = object_props[obj];
+    if (prop & PROP_EAT) {
+        check_eaten(obj);
+        map[snap_idx] = OBJ_EMPTY | FLAG_NEW;
+        render_one(snap_idx, OBJ_EMPTY);
+    }
+}
+
 static const uint8_t move_flags[4] = {
     MOVE_UP,
     MOVE_DOWN,
@@ -460,7 +474,7 @@ static const uint8_t move_flags[4] = {
     MOVE_RIGHT,
 };
 
-static void movement_step(uint8_t flags) {
+static void movement_step(uint8_t flags, bool snap) {
     if (game_over) {
         return;
     }
@@ -469,7 +483,11 @@ static void movement_step(uint8_t flags) {
     for (uint8_t i = 0; i != 4; ++i) {
         uint8_t f = move_flags[(i ^ dir) % 4];
         if (flags & f) {
-            move(f);
+            if (snap) {
+                snap_field(f);
+            } else {
+                move(f);
+            }
             break;
         }
     }
