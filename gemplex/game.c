@@ -115,36 +115,40 @@ void game_loop(void) {
     while (true) {
         for (uint8_t i = 0; i != 50; ++i) {
             uint8_t key = ps2_get_key_event();
+            uint8_t new_move_flags = move_flags;
             switch (key) {
             case PS2_KEY_UP:
-                move_flags |= MOVE_UP;
-                goto step;
+                new_move_flags |= MOVE_UP;
+                break;
             case PS2_KEY_UP | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_UP;
-                goto step;
+                new_move_flags &= ~MOVE_UP;
+                break;
             case PS2_KEY_DOWN:
-                move_flags |= MOVE_DOWN;
-                goto step;
+                new_move_flags |= MOVE_DOWN;
+                break;
             case PS2_KEY_DOWN | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_DOWN;
-                goto step;
+                new_move_flags &= ~MOVE_DOWN;
+                break;
             case PS2_KEY_LEFT:
-                move_flags |= MOVE_LEFT;
-                goto step;
+                new_move_flags |= MOVE_LEFT;
+                break;
             case PS2_KEY_LEFT | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_LEFT;
-                goto step;
+                new_move_flags &= ~MOVE_LEFT;
+                break;
             case PS2_KEY_RIGHT:
-                move_flags |= MOVE_RIGHT;
-                goto step;
+                new_move_flags |= MOVE_RIGHT;
+                break;
             case PS2_KEY_RIGHT | PS2_KEY_RELEASE:
-                move_flags &= ~MOVE_RIGHT;
-                goto step;
+                new_move_flags &= ~MOVE_RIGHT;
+                break;
             case PS2_KEY_ESCAPE:
                 return;
             }
+            if (new_move_flags != move_flags) {
+                move_flags = new_move_flags;
+                break;
+            }
         }
-step:
         engine_step(move_flags, ps2_modifiers_mask & PS2_MASK_SHIFT);
     }
 }
