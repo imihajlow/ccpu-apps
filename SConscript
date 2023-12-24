@@ -16,4 +16,6 @@ shell_app = app_env.Program('shell', Split('shell.c lib/more.c') + c_runtime + a
 
 ethtest_app = app_env.Program('ethtest', Split('ethtest.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
 
-Return("snake_app shell_app ethtest_app")
+ps2test_app = app_env.Program('ps2test', Split('ps2test.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
+
+Return("snake_app shell_app ethtest_app ps2test_app")
