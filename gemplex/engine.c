@@ -16,8 +16,8 @@
 
 #define EMULATOR 1
 
-#if EMULATOR
-#define DELAY_CYCLES_PRO_CHANGE 400
+#ifdef EMULATOR
+#define DELAY_CYCLES_PRO_CHANGE 450
 #define MAX_CHANGES_TO_SLOW_DOWN 200
 #else
 #define DELAY_CYCLES_PRO_CHANGE 20
@@ -192,7 +192,7 @@ void engine_step(uint8_t movement_flags, bool snap) {
             }
             uint8_t right_obj = map[right_idx];
             uint8_t right_obj_prop = object_props[right_obj];
-            if (right_obj_prop & PROP_EMPTY) {
+            if ((right_obj_prop & PROP_EMPTY) || ((right_obj & ~(FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED)) == OBJ_PLAYER)) {
                 map[idx] = FLAG_NEW | cw_state;
                 render_one(idx, cw_state);
                 continue;

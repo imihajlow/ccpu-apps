@@ -145,8 +145,14 @@ void game_loop(void) {
                 return;
             }
             if (new_move_flags != move_flags) {
+                uint8_t pressed = (new_move_flags ^ move_flags) & new_move_flags;
                 move_flags = new_move_flags;
-                break;
+                if (pressed) {
+                    engine_step(pressed, ps2_modifiers_mask & PS2_MASK_SHIFT);
+                    i = 0;
+                } else {
+                    break;
+                }
             }
         }
         engine_step(move_flags, ps2_modifiers_mask & PS2_MASK_SHIFT);
