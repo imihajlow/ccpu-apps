@@ -14,7 +14,7 @@
 #define MAP_H 30
 #define MAX_CHANGES (MAP_W * MAP_H)
 
-#define EMULATOR 1
+// #define EMULATOR
 
 #ifdef EMULATOR
 #define DELAY_CYCLES_PRO_CHANGE 450
@@ -190,6 +190,7 @@ void engine_step(uint8_t movement_flags, bool snap) {
                 explosion(front_idx);
                 continue;
             }
+
             uint8_t right_obj = map[right_idx];
             uint8_t right_obj_prop = object_props[right_obj];
             if ((right_obj_prop & PROP_EMPTY) || ((right_obj & ~(FLAG_NEW | FLAG_EXPLOSION | FLAG_MOVED)) == OBJ_PLAYER)) {
@@ -202,6 +203,14 @@ void engine_step(uint8_t movement_flags, bool snap) {
                 map[idx] = FLAG_NEW | OBJ_EMPTY;
                 map[front_idx] = move_state;
                 map[idx - MAP_W] |= FLAG_NEW;
+                if (move_state == (OBJ_ENEMY_N | FLAG_NEW)) {
+                    uint8_t top_obj = map[front_idx - MAP_W];
+                    uint8_t top_obj_prop = object_props[top_obj];
+                    if (top_obj_prop & PROP_ROLL_FALL) {
+                        explosion(front_idx);
+                        continue;
+                    }
+                }
                 render_one(idx, OBJ_EMPTY);
                 render_one(front_idx, move_state);
                 continue;
@@ -463,6 +472,7 @@ static void snap_field(uint8_t direction) {
     if (prop & PROP_EAT) {
         check_eaten(obj);
         map[snap_idx] = OBJ_EMPTY | FLAG_NEW;
+        map[snap_idx - MAP_W] |= FLAG_NEW;
         render_one(snap_idx, OBJ_EMPTY);
     }
 }
