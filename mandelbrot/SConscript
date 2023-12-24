@@ -1,0 +1,9 @@
+Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup")
+
+fixpoint = env.Object(Split('fp_umul.asm fixpoint.c'))
+
+# Apps
+mandelbrot_app = app_env.Program('mndlbrot', Split('main.c') + c_runtime + app_startup + fixpoint, LIBS=['c', 'sys'])
+fptest_bin = rom_env.Program('fptest', Split('fptest.c') + c_runtime + rom_startup + fixpoint, LIBS=['c', 'sys'])
+
+Return("mandelbrot_app")
