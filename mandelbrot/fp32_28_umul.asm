@@ -1,5 +1,6 @@
     ; Fixed point number multiplication (32 bit, 28 bit shift)
-    .export fp_umul
+    .export fp32_28_umul
+    .export multable16x16
     .global __cc_ret
 
     .const param_a  = 0xc800 + 8 * 0
@@ -21,8 +22,8 @@
     ; (a0b7 + a1b6 + a2b5 + a3b4 + a4b3 + a5b2 + a6b1 + a7b0) +
     ; (a0b6 + a1b5 + a2b4 + a3b3 + a4b2 + a5b1 + a6b0) >> 4
 
-    .section text.fp_umul
-fp_umul:
+    .section text.fp32_28_umul
+fp32_28_umul:
     mov a, pl
     mov b, a
     mov a, ph
@@ -177,7 +178,7 @@ offset_neg4:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -188,7 +189,7 @@ offset_neg4:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -205,7 +206,7 @@ offset_neg4:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -222,7 +223,7 @@ offset_neg4:
     ldi pl, lo(b_odd + 1)   ; b3
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -239,7 +240,7 @@ offset_neg4:
     ldi pl, lo(b_even + 1)   ; b2
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -256,7 +257,7 @@ offset_neg4:
     ldi pl, lo(b_odd + 0)   ; b1
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -273,7 +274,7 @@ offset_neg4:
     ldi pl, lo(b_even + 0)   ; b0
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -308,7 +309,7 @@ offset_0:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -319,7 +320,7 @@ offset_0:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -336,7 +337,7 @@ offset_0:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -353,7 +354,7 @@ offset_0:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -370,7 +371,7 @@ offset_0:
     ldi pl, lo(b_odd + 1)   ; b3
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -387,7 +388,7 @@ offset_0:
     ldi pl, lo(b_even + 1)   ; b2
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -404,7 +405,7 @@ offset_0:
     ldi pl, lo(b_odd + 0)   ; b1
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -421,7 +422,7 @@ offset_0:
     ldi pl, lo(b_even + 0)   ; b0
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -455,7 +456,7 @@ offset_4:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -466,7 +467,7 @@ offset_4:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -483,7 +484,7 @@ offset_4:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -500,7 +501,7 @@ offset_4:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -517,7 +518,7 @@ offset_4:
     ldi pl, lo(b_odd + 1)   ; b3
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -534,7 +535,7 @@ offset_4:
     ldi pl, lo(b_even + 1)   ; b2
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -551,7 +552,7 @@ offset_4:
     ldi pl, lo(b_odd + 0)   ; b1
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -609,7 +610,7 @@ offset_8:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -620,7 +621,7 @@ offset_8:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -637,7 +638,7 @@ offset_8:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -654,7 +655,7 @@ offset_8:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -671,7 +672,7 @@ offset_8:
     ldi pl, lo(b_odd + 1)   ; b3
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -688,7 +689,7 @@ offset_8:
     ldi pl, lo(b_even + 1)   ; b2
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -723,7 +724,7 @@ offset_12:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -734,7 +735,7 @@ offset_12:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -751,7 +752,7 @@ offset_12:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -768,7 +769,7 @@ offset_12:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -785,7 +786,7 @@ offset_12:
     ldi pl, lo(b_odd + 1)   ; b3
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -843,7 +844,7 @@ offset_16:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -854,7 +855,7 @@ offset_16:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -871,7 +872,7 @@ offset_16:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -888,7 +889,7 @@ offset_16:
     ldi pl, lo(b_even + 2)   ; b4
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -922,7 +923,7 @@ offset_20:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -933,7 +934,7 @@ offset_20:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -950,7 +951,7 @@ offset_20:
     ldi pl, lo(b_odd + 2)   ; b5
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -1006,7 +1007,7 @@ offset_24:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -1017,7 +1018,7 @@ offset_24:
     ldi pl, lo(b_even + 3)   ; b6
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
     ldi ph, hi(tmp)
     ldi pl, lo(tmp)
@@ -1039,7 +1040,7 @@ offset_28:
     ldi pl, lo(b_odd + 3)   ; b7
     ld  pl
     or  pl, a
-    ldi ph, hi(multable)
+    ldi ph, hi(multable16x16)
     ld  a
 
     shl a
@@ -1061,9 +1062,9 @@ offset_28:
     jmp
 
     ; Nibble multiplication table
-    .section rodata.multable
+    .section rodata.multable16x16
     .align 256
-multable:
+multable16x16:
     db 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
     db 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F
     db 0x00,0x02,0x04,0x06,0x08,0x0A,0x0C,0x0E,0x10,0x12,0x14,0x16,0x18,0x1A,0x1C,0x1E

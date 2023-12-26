@@ -1,9 +1,9 @@
 #include "fixpoint.h"
 
-fp32 fooa, foob, foor;
+fp16 fooa, foob, foor;
 
 void main(void) {
-    foor = fp32_28_mul(fooa, foob);
+    foor = fp16_12_mul(fooa, foob);
 }
 
 int getchar(void) { return 0; }
