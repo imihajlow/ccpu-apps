@@ -70,7 +70,7 @@ char object_char_r[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
 
 uint8_t object_color[PROP_ARRAY_LEN] __attribute__((aligned(256))) = {
     [OBJ_EMPTY] = 0,
-    [OBJ_PLAYER] = COLOR(COLOR_LIGHT_RED, COLOR_BLACK),
+    [OBJ_PLAYER] = COLOR(COLOR_YELLOW, COLOR_BLACK),
     [OBJ_WALL] = COLOR(COLOR_GRAY, COLOR_BLACK),
     [OBJ_GROUND] = COLOR(COLOR_LIGHT_GREEN, COLOR_BLACK),
     [OBJ_ROCK] = COLOR(COLOR_DARK_GRAY, COLOR_BLACK),
