@@ -6,26 +6,32 @@
 #include <libsys/syscall.h>
 #include <libsys/ps2keyboard.h>
 #include <string.h>
+#include <assert.h>
 
 #define TYPING_COLOR COLOR(COLOR_WHITE, COLOR_BLUE)
 #define CURSOR_COLOR COLOR(COLOR_BLUE, COLOR_WHITE)
 #define STATUS_COLOR COLOR(COLOR_BLACK, COLOR_CYAN)
+#define PROMPT_COLOR COLOR(COLOR_WHITE, COLOR_RED)
 
 #define MAX_LINES 300
 
 #define NO_NEWLINE 128
 
+#define LINE_WIDTH 59
+
 struct Line {
     struct Line *prev;
     struct Line *next;
     uint8_t len; // 0-59 - has newline, 128 - no newline, full
-    uint8_t data[59];
+    uint8_t data[LINE_WIDTH];
 };
+
+static_assert(sizeof(struct Line) == 64, "sizeof(struct Line) must be 64");
 
 static struct Line line_pool[MAX_LINES];
 
 // where each screen before current starts:
-static struct Line *screen_ptrs[MAX_LINES / (VGA_ROWS - 1) + 1];
+static struct Line *screen_ptrs[MAX_LINES / VGA_ROWS + 1];
 
 // current screen index
 static uint8_t screen_idx;
@@ -53,6 +59,8 @@ static struct Line *cursor_line;
 static struct Line *next_screen;
 
 static void show_dirty(void);
+static void init_layout(void);
+static struct Line *show_lines(struct Line *start);
 
 static bool load(const char *path) {
     uint8_t fd = fat_open_path(path, O_CREAT);
@@ -116,7 +124,7 @@ static bool load(const char *path) {
 }
 
 static bool save(const char *path) {
-    uint8_t fd = fat_open_path(path, 0); // file must already exist
+    uint8_t fd = fat_open_path(path, O_CREAT); // file must already exist
     if (fd == FAT_BAD_DESC) {
         // log_string("Can't open");
         // log_u8(last_error);
@@ -155,43 +163,90 @@ static bool save(const char *path) {
     return true;
 }
 
+static bool save_as(void) {
+    if (filename != filename_buf) {
+        strcpy(filename_buf, filename);
+        filename = filename_buf;
+    }
+    memset(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), 0, VGA_COLS);
+    memset(VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), PROMPT_COLOR, VGA_COLS);
+    bool r = line_edit(filename_buf, sizeof(filename_buf) - 1, 0, VGA_ROWS - 1, PROMPT_COLOR);
+    if (r) {
+        r = save(filename);
+    } else {
+        r = false;
+    }
+    init_layout();
+    next_screen = show_lines(screen_ptrs[screen_idx]);
+    return r;
+}
+
+static void show_filename(void) {
+    char *name = filename;
+    for (uint8_t row = 10; *name && row != VGA_ROWS; ++row) {
+        uint8_t col = LINE_WIDTH + 2;
+        char *p = VGA_CHAR_SEG + VGA_OFFSET(col, row);
+        while (true) {
+            char c = *name;
+            if (!c)
+                break;
+            *p = c;
+            ++name;
+            ++col;
+            if (c == '/') {
+                if (col + 11 > VGA_COLS)
+                    break;
+            }
+            ++p;
+        }
+    }
+}
+
 static void init_layout(void) {
-    vga_clear(TYPING_COLOR);
-    memset(VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), STATUS_COLOR, VGA_COLS);
-    strcpy(VGA_CHAR_SEG + VGA_OFFSET(3, VGA_ROWS - 1), filename);
+    memset(VGA_CHAR_SEG, 0, VGA_ROWS * 128);
+    for (char *pcolor = VGA_COLOR_SEG; pcolor != VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS); pcolor += VGA_OFFSET(0, 1)) {
+        memset(pcolor, TYPING_COLOR, LINE_WIDTH + 1);
+        memset(pcolor + (LINE_WIDTH + 1), STATUS_COLOR, VGA_COLS - LINE_WIDTH - 1);
+    }
+    strcpy(VGA_CHAR_SEG + VGA_OFFSET(LINE_WIDTH + 2, 2), "Esc - exit");
+    strcpy(VGA_CHAR_SEG + VGA_OFFSET(LINE_WIDTH + 2, 3), "F2  - save");
+    strcpy(VGA_CHAR_SEG + VGA_OFFSET(LINE_WIDTH + 2, 4), "F3  - save as");
+    show_filename();
     show_dirty();
 }
 
 static void show_dirty(void) {
+    uint8_t c = LINE_WIDTH + 1;
+    uint8_t r = 3;
     if (dirty) {
-        VGA_CHAR_SEG[VGA_OFFSET(1, VGA_ROWS - 1)] = '*';
+        VGA_CHAR_SEG[VGA_OFFSET(c, r)] = '*';
     } else {
-        VGA_CHAR_SEG[VGA_OFFSET(1, VGA_ROWS - 1)] = 0;
+        VGA_CHAR_SEG[VGA_OFFSET(c, r)] = 0;
     }
 }
 
 static struct Line *show_lines(struct Line *start) {
     uint8_t row = 0;
-    while (row != VGA_ROWS - 1 && start) {
+    while (row != VGA_ROWS && start) {
         uint8_t *p = VGA_CHAR_SEG + VGA_OFFSET(0, row);
         uint8_t i;
-        for (i = 0; i != start->len && i != (uint8_t)sizeof(start->data); i += 1) {
+        for (i = 0; i != start->len && i != LINE_WIDTH; i += 1) {
             uint8_t c = start->data[i];
             *p = c;
             p += 1;
         }
-        for (; i < VGA_COLS; i += 1) {
+        for (; i != LINE_WIDTH; i += 1) {
             *p = 0;
             p += 1;
         }
         row += 1;
         start = start->next;
     }
-    if (row != VGA_ROWS - 1) {
+    if (row != VGA_ROWS) {
         start = 0;
     }
-    for (; row != VGA_ROWS - 1; row += 1) {
-        memset(VGA_CHAR_SEG + VGA_OFFSET(0, row), 0, VGA_COLS);
+    for (; row != VGA_ROWS; row += 1) {
+        memset(VGA_CHAR_SEG + VGA_OFFSET(0, row), 0, LINE_WIDTH + 1);
     }
     return start;
 }
@@ -230,7 +285,7 @@ bool insert(uint8_t c) {
             }
             l->len += 1;
             l->data[col] = c;
-            if (row < VGA_ROWS - 1) {
+            if (row < VGA_ROWS) {
                 memcpy(VGA_CHAR_SEG + VGA_OFFSET(col, row), l->data + col, l->len - col);
             }
             if (!cursor_set) {
@@ -254,7 +309,7 @@ bool insert(uint8_t c) {
                     l->data[i] = l->data[i - 1];
                 }
                 l->data[col] = c;
-                if (row < VGA_ROWS - 1) {
+                if (row < VGA_ROWS) {
                     memcpy(VGA_CHAR_SEG + VGA_OFFSET(col, row), l->data + col, sizeof(l->data) - col);
                 }
                 if (!cursor_set) {
@@ -270,7 +325,7 @@ bool insert(uint8_t c) {
             }
             l->len = NO_NEWLINE;
             new_line->data[0] = next;
-            if (row == VGA_ROWS - 2) {
+            if (row == VGA_ROWS - 1) {
                 next_screen = next_screen->prev;
             } else {
                 next_screen = show_lines(screen_ptrs[screen_idx]);
@@ -285,7 +340,7 @@ bool insert(uint8_t c) {
                     l->data[i] = l->data[i - 1];
                 }
                 l->data[col] = c;
-                if (row < VGA_ROWS - 1) {
+                if (row < VGA_ROWS) {
                     memcpy(VGA_CHAR_SEG + VGA_OFFSET(col, row), l->data + col, sizeof(l->data) - col);
                 }
                 if (!cursor_set) {
@@ -307,7 +362,7 @@ bool insert(uint8_t c) {
             row += 1;
         }
     }
-    if (cursor_row == VGA_ROWS - 1) {
+    if (cursor_row == VGA_ROWS) {
         screen_idx += 1;
         screen_ptrs[screen_idx] = next_screen;
         next_screen = show_lines(next_screen);
@@ -403,7 +458,7 @@ bool break_line(void) {
             cursor_col = 0;
         }
     }
-    if (cursor_row == VGA_ROWS - 1) {
+    if (cursor_row == VGA_ROWS) {
         screen_idx += 1;
         screen_ptrs[screen_idx] = new_line;
         cursor_row = 0;
@@ -425,7 +480,7 @@ bool delete(struct Line *l, uint8_t col) {
                     cursor_line = cursor_line->prev;
                     if (cursor_row == 0) {
                         screen_idx -= 1;
-                        cursor_row = VGA_ROWS - 2;
+                        cursor_row = VGA_ROWS - 1;
                     } else {
                         cursor_row -= 1;
                     }
@@ -554,7 +609,7 @@ static void delete_left(void) {
         if (prev_line) {
             cursor_line = prev_line;
             if (cursor_row == 0) {
-                cursor_row = VGA_ROWS - 2;
+                cursor_row = VGA_ROWS - 1;
                 screen_idx -= 1;
             } else {
                 cursor_row -= 1;
@@ -583,11 +638,13 @@ void main(uint8_t argc, ...) {
     vga_clear(TYPING_COLOR);
     if (argc == 0) {
         filename_buf[0] = 0;
-        strcpy(VGA_CHAR_SEG, "Filename: ");
-        bool r = line_edit(filename_buf, sizeof(filename_buf) - 1, 10, 0, TYPING_COLOR);
+        strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "Filename: ");
+        memset(VGA_COLOR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), PROMPT_COLOR, VGA_COLS);
+        bool r = line_edit(filename_buf, sizeof(filename_buf) - 1, 10, VGA_ROWS - 1, PROMPT_COLOR);
         if (!r) {
             return;
         }
+        vga_clear(TYPING_COLOR);
         filename = filename_buf;
     } else {
         va_list va;
@@ -627,7 +684,7 @@ void main(uint8_t argc, ...) {
                     if (screen_idx != 0) {
                         screen_idx -= 1;
                         next_screen = show_lines(screen_ptrs[screen_idx]);
-                        cursor_row = VGA_ROWS - 2;
+                        cursor_row = VGA_ROWS - 1;
                     }
                 } else {
                     cursor_row -= 1;
@@ -640,7 +697,7 @@ void main(uint8_t argc, ...) {
                 }
             } else if (k == PS2_KEY_DOWN) {
                 if (cursor_line->next) {
-                    if (cursor_row == VGA_ROWS - 2) {
+                    if (cursor_row == VGA_ROWS - 1) {
                         if (next_screen) {
                             screen_idx += 1;
                             screen_ptrs[screen_idx] = next_screen;
@@ -696,6 +753,8 @@ void main(uint8_t argc, ...) {
                 break;
             } else if (k == PS2_KEY_F2) {
                 save(filename);
+            } else if (k == PS2_KEY_F3) {
+                save_as();
             }
         }
         VGA_COLOR_SEG[VGA_OFFSET(cursor_col, cursor_row)] = CURSOR_COLOR;
