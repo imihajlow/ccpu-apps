@@ -31,4 +31,7 @@
 
 - name: bss
   init: No
+
+- name: shared
+  init: No
   end: 0xC000

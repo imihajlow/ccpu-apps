@@ -1,0 +1,7 @@
+Import("env", "app_env", "c_runtime", "app_startup", "line_edit")
+
+
+# Apps
+edit_app = app_env.Program('edit', Split('edit.c') + c_runtime + app_startup + line_edit, LIBS=['c', 'sys'])
+
+Return("edit_app")

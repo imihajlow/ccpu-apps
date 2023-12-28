@@ -63,7 +63,7 @@ void main(void) {
             break;
         case STATE_EXEC:
             puts("Starting /SHELL.APP");
-            if (fat_exec(0, "/SHELL.APP")) {
+            if (fat_exec(0, "/SHELL.APP", 0)) {
             } else {
                 fat_print_last_error(0);
                 state = STATE_GIVE_UP;
@@ -120,4 +120,20 @@ int putchar(int x) {
 
 int syscall_putchar(char _syscall_nr, int x) {
     return putchar(x);
+}
+
+extern char __seg_shared_begin;
+extern char __seg_shared_end;
+
+void *get_shared_mem_ptr(char _syscall_nr) {
+    return &__seg_shared_begin;
+}
+
+size_t get_shared_mem_size(char _syscall_nr) {
+    // compiler TODO workaround
+    static uint16_t begin;
+    begin = (uint16_t)&__seg_shared_begin;
+    static uint16_t end;
+    end = (uint16_t)&__seg_shared_end;
+    return end - begin;
 }

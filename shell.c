@@ -172,21 +172,23 @@ static void run_app(const char *rel_name) {
     strcat(buf, "/");
     strcat(buf, rel_name);
 
-    if (!fat_exec(buf)) {
+    if (!fat_exec(buf, 0)) {
         strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "ERROR");
         ps2_wait_key_pressed();
     }
 }
 
-/*static void run_editor(const char *target) {
-    u8 *slash = append_path(target);
-    u8 r = exec("/EDIT.APP", (u8*)current_dir_name, (u8*)0, (u8*)0, (u8*)0, (u8*)0, (u8*)0, (u8*)0);
-    if (!r) {
-        log_string("Cannot exec");
-        log_u8(last_error);
+static void run_editor(const char *rel_name) {
+    char *shared_mem = get_shared_mem_ptr();
+    strcpy(shared_mem, current_dir_name);
+    strcat(shared_mem, "/");
+    strcat(shared_mem, rel_name);
+    strcpy(buf, "/EDIT.APP");
+    if (!fat_exec(buf, 1, shared_mem)) {
+        strcpy(VGA_CHAR_SEG + VGA_OFFSET(0, VGA_ROWS - 1), "ERROR");
+        ps2_wait_key_pressed();
     }
-    *slash = 0u8;
-}*/
+}
 
 static void append_path(const char *name) {
     if (strcmp(name, ".") == 0) {
@@ -256,10 +258,10 @@ void main(void) {
                             break;
                         }
                     } else if (k == PS2_KEY_F4) {
-                        // if (!(filenames[cursor_file_index].attrs & FAT_FILE_ATTR_DIRECTORY)) {
-                        //     run_editor(filenames[cursor_file_index].name);
-                        //     break;
-                        // }
+                        if (!(filenames[cursor_file_index].attrs & FAT_FILE_ATTR_DIRECTORY)) {
+                            run_editor(filenames[cursor_file_index].name);
+                            break;
+                        }
                     } else if (k == PS2_KEY_ENTER) {
                         if (filenames[cursor_file_index].attrs & FAT_FILE_ATTR_DIRECTORY) {
                             char *name = filenames[cursor_file_index].name;

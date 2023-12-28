@@ -6,7 +6,7 @@ env = Environment(
     CC='ccpu-cc',
     LINK="link.py",
     AS="asm.py",
-    CPPPATH=['#.', os.path.abspath("../ccpu-libc/include"), os.path.abspath("../ccpu-libsys/include")],
+    CPPPATH=['#.', os.path.abspath("../ccpu-libc/include"), os.path.abspath("../ccpu-libsys/include"), "#/lib"],
     LIBPATH=[os.path.abspath("../ccpu-libc"), os.path.abspath("../ccpu-libsys")],
     ENV={'PATH': os.environ['PATH'] },
     CC_DIR=os.path.abspath("../ccpu-cc"),
@@ -24,8 +24,9 @@ c_runtime = env.Object(['$CC_DIR/ccpu-runtime/runtime.asm', '$CC_DIR/ccpu-runtim
 app_startup = env.Object(['$CC_DIR/ccpu-runtime/app_startup.asm'])
 rom_startup = env.Object(['$CC_DIR/ccpu-runtime/rom_startup.asm'])
 ipcfg = env.Object(Split('lib/ipcfg.c'))
+line_edit = env.Object(Split('lib/line_edit.c'))
 
-Export("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg")
+Export("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg", "line_edit")
 
 SConscript("fatos/SConscript")
 apps = SConscript("SConscript")
@@ -34,5 +35,6 @@ lanpong_app = SConscript("lanpong/SConscript")
 dhcpc_app = SConscript("dhcpc/SConscript")
 gemplex_app = SConscript("gemplex/SConscript")
 mandelbrot_app = SConscript("mandelbrot/SConscript")
+edit_app = SConscript("edit/SConscript")
 
-env.Image('image', apps + lanpong_app + dhcpc_app + httpd_app + gemplex_app + mandelbrot_app)
+env.Image('image', apps + lanpong_app + dhcpc_app + httpd_app + gemplex_app + mandelbrot_app + edit_app)

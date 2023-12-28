@@ -8,12 +8,13 @@
     .global fat_get_next_dir_entry
     .global fat_mount
     .global fat_exec
-    .global fat_exec_fd
     .global fat_get_last_error
     .global fat_tell
     .global fat_seek
     .global syscall_putchar
     .global fat_print_last_error
+    .global get_shared_mem_ptr
+    .global get_shared_mem_size
 
     .global __cc_ret
 
@@ -127,10 +128,12 @@ syscall_table:
     dw fat_get_next_dir_entry
     dw fat_mount
     dw fat_exec
-    dw fat_exec_fd
+    dw 0x0000
     dw fat_get_last_error
     dw 0x0000
     dw fat_tell
     dw fat_seek
     dw syscall_putchar
     dw fat_print_last_error
+    dw get_shared_mem_ptr
+    dw get_shared_mem_size
