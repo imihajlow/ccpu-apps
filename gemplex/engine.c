@@ -332,7 +332,7 @@ static void player_down(void) {
     if (bot_obj_prop & PROP_EAT) {
         check_eaten(bot_obj);
         map[bot_idx] = OBJ_PLAYER | FLAG_NEW;
-        map[player_idx] = OBJ_EMPTY | FLAG_NEW;
+        map[player_idx] = OBJ_EMPTY | FLAG_NEW | FLAG_MOVED;
         player_y += 1;
         apply_flag(player_idx, FLAG_NEW);
         render_one(bot_idx, OBJ_PLAYER);

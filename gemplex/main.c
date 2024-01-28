@@ -10,7 +10,6 @@
 #include "game.h"
 
 void main(void) {
-    ps2_set_rate(PS2_RATE_20_CPTS | PS2_DELAY_1000_MS);
     while (true) {
         game_show_menu();
         const char *fname = game_menu_loop();
