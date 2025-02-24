@@ -1,0 +1,7 @@
+Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup")
+
+# Apps
+line_app = app_env.Program('line', Split('main.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
+line_rom = rom_env.Program('line_rom', Split('main.c') + c_runtime + rom_startup, LIBS=['c', 'sys'])
+
+Return("line_app")

@@ -36,5 +36,6 @@ dhcpc_app = SConscript("dhcpc/SConscript")
 gemplex_app = SConscript("gemplex/SConscript")
 mandelbrot_app = SConscript("mandelbrot/SConscript")
 edit_app = SConscript("edit/SConscript")
+line_app = SConscript("line/SConscript")
 
-env.Image('image', apps + lanpong_app + dhcpc_app + httpd_app + gemplex_app + mandelbrot_app + edit_app)
+env.Image('image', apps + lanpong_app + dhcpc_app + httpd_app + gemplex_app + mandelbrot_app + edit_app + line_app)
