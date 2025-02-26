@@ -1,4 +1,4 @@
-#include "fixpoint.h"
+#include "fpmath/fixpoint.h"
 
 fp32 fooa, foob, foor;
 

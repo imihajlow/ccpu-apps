@@ -3,7 +3,7 @@
 #include <string.h>
 #include <libsys/vga.h>
 #include <libsys/ps2keyboard.h>
-#include "fixpoint.h"
+#include "fpmath/fixpoint.h"
 
 #define CHAR_TOP 223
 

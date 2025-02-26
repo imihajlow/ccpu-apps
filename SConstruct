@@ -25,8 +25,9 @@ app_startup = env.Object(['$CC_DIR/ccpu-runtime/app_startup.asm'])
 rom_startup = env.Object(['$CC_DIR/ccpu-runtime/rom_startup.asm'])
 ipcfg = env.Object(Split('lib/ipcfg.c'))
 line_edit = env.Object(Split('lib/line_edit.c'))
+fpmath = env.Object(Split('lib/fpmath/fixpoint.c lib/fpmath/fp16_12_umul.asm lib/fpmath/fp32_28_umul.asm'))
 
-Export("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg", "line_edit")
+Export("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "ipcfg", "line_edit", "fpmath")
 
 SConscript("fatos/SConscript")
 apps = SConscript("SConscript")
