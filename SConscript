@@ -18,4 +18,8 @@ ethtest_app = app_env.Program('ethtest', Split('ethtest.c') + c_runtime + app_st
 
 ps2test_app = app_env.Program('ps2test', Split('ps2test.c') + c_runtime + app_startup, LIBS=['c', 'sys'])
 
-Return("snake_app shell_app ethtest_app ps2test_app")
+fire = env.Object(Split('fire.c'))
+fire_app = app_env.Program('fire', fire + c_runtime + app_startup, LIBS=['c', 'sys'])
+fire_rom = rom_env.Program('fire_rom', fire + c_runtime + rom_startup, LIBS=['c', 'sys'])
+
+Return("snake_app shell_app ethtest_app ps2test_app fire_app")
