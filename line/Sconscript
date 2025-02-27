@@ -1,9 +1,12 @@
-Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup")
+Import("env", "app_env", "rom_env", "c_runtime", "app_startup", "rom_startup", "fpmath")
 
 # Apps
 line = env.Object(Split("line.c"))
 line_prog = env.Object(Split("main.c"))
+cube_prog = env.Object(Split("cube.c"))
 line_app = app_env.Program('line', line_prog + line + c_runtime + app_startup, LIBS=['c', 'sys'])
 line_rom = rom_env.Program('line_rom', line_prog + line + c_runtime + rom_startup, LIBS=['c', 'sys'])
+
+cube_rom = rom_env.Program('cube_rom', cube_prog + line + fpmath + c_runtime + rom_startup, LIBS=['c', 'sys'])
 
 Return("line_app")
